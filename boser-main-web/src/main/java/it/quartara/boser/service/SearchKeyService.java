@@ -5,6 +5,8 @@ import java.util.Set;
 import it.quartara.boser.model.SearchConfig;
 import it.quartara.boser.model.SearchKey;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.PUT;
@@ -18,6 +20,9 @@ import org.slf4j.LoggerFactory;
 public class SearchKeyService {
 	
 	private static final Logger log = LoggerFactory.getLogger(SearchService.class);
+	
+	@PersistenceContext(unitName = "BoserPU")
+	EntityManager em;
 
 	@PUT
 	public Response insert(@FormParam("text") String param,

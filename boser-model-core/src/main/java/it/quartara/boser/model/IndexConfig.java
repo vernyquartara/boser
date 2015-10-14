@@ -3,6 +3,7 @@ package it.quartara.boser.model;
 import java.util.Set;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -17,7 +18,7 @@ public class IndexConfig extends PersistentEntity {
 	private Crawler crawler;
 	private short depth;
 	private short topN;
-	@OneToMany
+	@OneToMany(fetch=FetchType.EAGER)
 	private Set<Site> sites;
 	
 	public short getDepth() {

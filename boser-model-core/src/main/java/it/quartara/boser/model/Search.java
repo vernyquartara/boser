@@ -3,6 +3,7 @@ package it.quartara.boser.model;
 import java.util.Date;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -17,7 +18,7 @@ public class Search extends PersistentEntity {
 	private Date timestamp;
 	@ManyToOne @JoinColumn(name = "config_id", nullable = false)
 	private SearchConfig config;
-	@ManyToOne @JoinColumn(name = "index_id", nullable = false)
+	@ManyToOne(fetch=FetchType.EAGER) @JoinColumn(name = "index_id", nullable = false)
 	private Index index;
 	
 	public String getZipFilePath() {

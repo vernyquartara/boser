@@ -17,13 +17,13 @@ boserApp.config(function($routeProvider) {
  
 
 boserApp.controller('CrawlerCtrl', ['$scope','$http',function (scope, http) {
-	var findCrawlersUrl = "http://localhost:8081/boser-main-web/api/crawler";
+	var findCrawlersUrl = "/crawler";
 	http.get(findCrawlersUrl).success(function(data) {
 		console.log('data received: '+data);
 		scope.crawlers = data;
 	})
 	
-	var findSearchConfigByCrawlerUrl = "http://localhost:8081/boser-main-web/api/searchConfig/crawler/1";
+	var findSearchConfigByCrawlerUrl = "/searchConfig/crawler/1";
 	http.get(findSearchConfigByCrawlerUrl).success(function(data) {
 		console.log('data received: '+data);
 		scope.searchConfigs = data;
@@ -53,7 +53,7 @@ boserApp.controller('CrawlerCtrl', ['$scope','$http',function (scope, http) {
 		}
 	};
 	
-	var addNewSearchKeyUrl = "http://localhost:8081/boser-main-web/api/searchKey";
+	var addNewSearchKeyUrl = "/searchKey";
 	scope.addSearchKey = function(newItem) {
 		console.log(newItem);
 		http.put(addNewSearchKeyUrl).success(function(data) {
@@ -65,7 +65,7 @@ boserApp.controller('CrawlerCtrl', ['$scope','$http',function (scope, http) {
 
 boserApp.controller('SearchCtrl', ['$scope','$http','$routeParams',function (scope, http, routeParams) {
 	console.log(routeParams);
-	var findSearchByConfigUrl = "http://localhost:8081/boser-main-web/api/search/searchConfig/"+routeParams.selected;
+	var findSearchByConfigUrl = "/search/searchConfig/"+routeParams.selected;
 	http.get(findSearchByConfigUrl).success(function(data) {
 		console.log('data received: '+data);
 		scope.searches = data;

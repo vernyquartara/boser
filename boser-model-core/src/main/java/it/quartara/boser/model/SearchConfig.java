@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.Set;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -16,9 +17,9 @@ public class SearchConfig extends PersistentEntity {
 	
 	@ManyToOne
 	private Crawler crawler;
-	@OneToMany
+	@OneToMany(fetch=FetchType.EAGER)
 	private Set<SearchAction> actions;
-	@OneToMany
+	@OneToMany(fetch=FetchType.EAGER)
 	private Set<SearchKey> keys;
 	
 	private String description;

@@ -5,6 +5,7 @@ import java.util.Date;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
@@ -17,7 +18,7 @@ public class Index extends PersistentEntity {
 	private Date whenStarted;
 	private Date whenTerminated;
 	private String path;
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.EAGER)
 	private IndexConfig config;
 	@Enumerated(EnumType.STRING)
 	private ExecutionState state;

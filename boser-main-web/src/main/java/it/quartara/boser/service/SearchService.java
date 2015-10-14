@@ -1,12 +1,11 @@
 package it.quartara.boser.service;
 
-import static it.quartara.boser.listener.EntityManagerListener.getEntityManager;
 import it.quartara.boser.model.Search;
-import it.quartara.boser.model.SearchConfig;
 
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -20,6 +19,9 @@ import org.slf4j.LoggerFactory;
 public class SearchService {
 
 	private static final Logger log = LoggerFactory.getLogger(SearchService.class);
+	
+	@PersistenceContext(unitName = "BoserPU")
+	EntityManager em;
 
 	@GET
 	@Produces("application/json")
@@ -40,7 +42,6 @@ public class SearchService {
 	@GET
 	@Path("/searchConfig/{id}")
 	public Response getBySearchConfigId(@PathParam("id") Long id) {
-		EntityManager em = getEntityManager();
 		List<Search> elements = 
 				em.createQuery("from Search where config.id = :ID", Search.class).setParameter("ID", id).getResultList();
 		return Response.status(200).entity(elements).build();

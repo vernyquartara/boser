@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.annotation.WebServlet;
@@ -14,8 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static it.quartara.boser.listener.EntityManagerListener.getEntityManager;
 
 /**
  * Effettua il download di una ricerca.
@@ -29,6 +28,9 @@ public class SearchDownloadServlet extends BoserServlet {
 	private static final long serialVersionUID = 1037242602501373936L;
 	
 	private static final Logger log = LoggerFactory.getLogger(SearchDownloadServlet.class);
+	
+	@PersistenceContext(unitName = "BoserPU")
+	EntityManager em;
 	
 	/*
 	 * 1) ricava l'id della ricerca dalla request
@@ -44,7 +46,6 @@ public class SearchDownloadServlet extends BoserServlet {
 		String searchId = request.getParameter("searchId");
 		log.debug("ricerca searchResult per id {}", searchId);
 		
-		EntityManager em = getEntityManager();
 		Search searchResult = em.find(Search.class, Long.valueOf(searchId));
 		String zipFilePath = searchResult.getZipFilePath();
 		File zipFile = new File(zipFilePath);
@@ -56,7 +57,6 @@ public class SearchDownloadServlet extends BoserServlet {
 	    ServletOutputStream out = response.getOutputStream();
 	    handleDownload(response, zipFile, attachmentName);
         out.close();
-        em.close();
 	}
 
 }

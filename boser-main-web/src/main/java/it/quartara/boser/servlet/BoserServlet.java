@@ -41,7 +41,7 @@ public abstract class BoserServlet extends HttpServlet {
 			log.debug("getting file lenght");
 			long length = file.length();
 			log.debug("file lenght is {}", length);
-			response.setContentLengthLong(length);
+			response.setContentLength((int)length);
 			byte[] buffer = new byte[4096];
 			int bytesRead = -1;
 			while ((bytesRead = input.read(buffer)) != -1) {
