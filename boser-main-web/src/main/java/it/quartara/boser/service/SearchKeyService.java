@@ -9,6 +9,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -24,7 +25,7 @@ public class SearchKeyService {
 	@PersistenceContext(unitName = "BoserPU")
 	EntityManager em;
 
-	@PUT
+	@POST
 	public Response insert(@FormParam("text") String param,
 			@FormParam("searchConfigId") String searchConfigId) {
 		log.debug(param);

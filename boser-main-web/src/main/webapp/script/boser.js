@@ -17,6 +17,12 @@ boserApp.config(function($routeProvider) {
  
 
 boserApp.controller('CrawlerCtrl', ['$scope','$http',function (scope, http) {
+	var findIndexUrl = "/index";
+	http.get(findIndexUrl).success(function(data) {
+		console.log('data received: '+data);
+		scope.indexes = data;
+	})
+	
 	var findCrawlersUrl = "/crawler";
 	http.get(findCrawlersUrl).success(function(data) {
 		console.log('data received: '+data);
@@ -52,7 +58,7 @@ boserApp.controller('CrawlerCtrl', ['$scope','$http',function (scope, http) {
 			scope.selectedSearchConfig = null;
 		}
 	};
-	
+	/*
 	var addNewSearchKeyUrl = "/searchKey";
 	scope.addSearchKey = function(newItem) {
 		console.log(newItem);
@@ -61,6 +67,12 @@ boserApp.controller('CrawlerCtrl', ['$scope','$http',function (scope, http) {
 			scope.searches = data;
 		});
 	};
+	*/
+	var findSearchByConfigUrl = "/search/searchConfig/1";
+	http.get(findSearchByConfigUrl).success(function(data) {
+		console.log('data received: '+data);
+		scope.searches = data;
+	})
 }]);
 
 boserApp.controller('SearchCtrl', ['$scope','$http','$routeParams',function (scope, http, routeParams) {
@@ -69,5 +81,6 @@ boserApp.controller('SearchCtrl', ['$scope','$http','$routeParams',function (sco
 	http.get(findSearchByConfigUrl).success(function(data) {
 		console.log('data received: '+data);
 		scope.searches = data;
+		scope.configId = routeParams.selected;
 	})
 }]);

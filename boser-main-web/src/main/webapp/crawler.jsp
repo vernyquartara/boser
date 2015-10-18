@@ -4,23 +4,27 @@
 
 <div id="main">
 	<div>
-		I tuoi crawlers:<br /> filtra per valore: <input type="text"
-			ng-model="query" />
+		I tuoi indici:<br />
 		<table border="1px solid grey">
 			<thead>
 				<tr>
 					<th></th>
 					<th>nome</th>
-					<th>creato il</th>
-					<th>ultima modifica</th>
+					<th>ultima indicizzazione</th>
+					<th>stato</th>
+					<th>ID configurazione</th>
+					<th>ID crawler</th>
+					
 				</tr>
 			</thead>
 			<tbody>
-				<tr ng-repeat="element in crawlers | filter:query">
-					<td><span ng-click="toggleCrawlerDetail(element)">&nbsp;+&nbsp;</span></td>
-					<td>{{element.description}}</td>
-					<td>{{element.creationDate | date:'dd/MM/yyyy HH:mm'}}</td>
-					<td>{{element.lastUpdate | date:'dd/MM/yyyy HH:mm:ss'}}</td>
+				<tr ng-repeat="element in indexes">
+					<td><span ng-click="toggleCrawlerDetail(element.config.crawler)">&nbsp;+&nbsp;</span></td>
+					<td>{{element.config.crawler.description}}</td>
+					<td>{{element.whenStarted | date:'dd/MM/yyyy HH:mm'}}</td>
+					<td>{{element.state}}</td>
+					<td>{{element.config.id}}</td>
+					<td>{{element.config.crawler.id}}</td>
 				</tr>
 			</tbody>
 		</table>
@@ -28,28 +32,32 @@
 
 	<div ng-show="crawlerDetailVisible">
 		<p>dettaglio del crawler: {{selectedCrawler.description}}</p>
-		<p>Configurazioni di ricerca:</p>
+		<p>azioni: <a href="#"">avvia il crawler</a></p>
 		<table border="1px solid grey">
 			<thead>
 				<tr>
-					<th></th>
-					<th>nome</th>
-					<th>creato il</th>
-					<th>ultima modifica</th>
+					<!-- <th></th> -->
+					<th>configurazione di ricerca</th>
+					<th>ultima ricerca effettuata in data</th>
+					<th>risultati</th>
 				</tr>
 			</thead>
 			<tbody>
-				<tr ng-repeat="element in searchConfigs">
-					<td><span ng-click="toggleSearchConfigDetail(element)">&nbsp;+&nbsp;</span></td>
-					<td>{{element.description}}</td>
-					<td>{{element.creationDate | date:'dd/MM/yyyy HH:mm'}}</td>
-					<td>{{element.lastUpdate | date:'dd/MM/yyyy HH:mm:ss'}}</td>
+				<tr ng-repeat="element in searches">
+					<!-- <td><span ng-click="toggleIndexDetail(element)">&nbsp;+&nbsp;</span></td> -->
+					<td>
+						<a href="<c:url value='/index.jsp#/search/{{element.config.crawler.id}}'/>">
+							{{element.config.crawler.description}}
+						</a>
+					</td>
+					<td>{{element.timestamp | date:'dd/MM/yyyy HH:mm.ss'}}</td>
+					<td><a href="<c:url value="/searchDownload?searchId={{element.id}}"/>">{{element.zipFilePath}}</a></td>
 				</tr>
 			</tbody>
 		</table>
 	</div>
 
-	<div ng-show="searchConfigDetailVisible">
+	<%-- <div ng-show="searchConfigDetailVisible">
 		<p>
 			configurazione di ricerca: {{selectedSearchConfig.description}} <a
 				href="<c:url value="/index.jsp#/search/{{selectedSearchConfig.id}}"/>">vedi risultati di
@@ -71,7 +79,7 @@
 			</tbody>
 		</table>
 		<p><input type="text" ng-model="newItem"/><button ng-click="addSearchKey(newItem)">Aggiungi</button></p>
-	</div>
+	</div> --%>
 
 </div>
 
