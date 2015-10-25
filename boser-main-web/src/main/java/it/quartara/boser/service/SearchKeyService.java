@@ -1,10 +1,13 @@
 package it.quartara.boser.service;
 
+import java.util.Date;
+import java.util.Iterator;
 import java.util.Set;
 
 import it.quartara.boser.model.SearchConfig;
 import it.quartara.boser.model.SearchKey;
 
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.ws.rs.DELETE;
@@ -18,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Path("/searchKey")
+@Stateless
 public class SearchKeyService {
 	
 	private static final Logger log = LoggerFactory.getLogger(SearchService.class);
@@ -27,14 +31,15 @@ public class SearchKeyService {
 
 	@POST
 	public Response insert(@FormParam("text") String param,
-			@FormParam("searchConfigId") String searchConfigId) {
+			@FormParam("searchConfigId") Long searchConfigId) {
 		log.debug(param);
 		
-		
-		SearchConfig searchConfig = null;
+		SearchConfig searchConfig = em.find(SearchConfig.class, searchConfigId);
 		SearchKey key = new SearchKey();
 		key.setText(param);
 		searchConfig.getKeys().add(key);
+		searchConfig.setLastUpdate(new Date());
+		em.merge(searchConfig);
 		
 		return Response.status(200).entity(param).build();
 	}

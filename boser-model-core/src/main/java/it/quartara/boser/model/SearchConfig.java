@@ -3,6 +3,7 @@ package it.quartara.boser.model;
 import java.util.Date;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
@@ -19,7 +20,11 @@ public class SearchConfig extends PersistentEntity {
 	private Crawler crawler;
 	@OneToMany(fetch=FetchType.EAGER)
 	private Set<SearchAction> actions;
-	@OneToMany(fetch=FetchType.EAGER)
+	/*
+	 * orphanRemoval=true funziona solo in combinazione con CascadeType.PERSIST
+	 * http://stackoverflow.com/questions/24579374/jpa-2-hibernate-orphan-removal-still-not-working-with-onetomany
+	 */
+	@OneToMany(fetch=FetchType.EAGER,cascade={CascadeType.MERGE,CascadeType.PERSIST}, orphanRemoval=true)
 	private Set<SearchKey> keys;
 	
 	private String description;

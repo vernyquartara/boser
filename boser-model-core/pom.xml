@@ -8,7 +8,7 @@
 	<url>www.boser.quartara.it</url>
 	
 	<properties>
-		<hibernate.version>4.2.12.Final</hibernate.version>
+		<hibernate.version>4.3.10.Final</hibernate.version>
 	</properties>
 
 	<build>

@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <div>
-	<p>Ricerche effettuate per la configurazione con id={{configId}}:</p>
+	<p>Ricerche effettuate per la configurazione con id={{searchConfigId}}:</p>
 	<table border="1px solid grey">
 			<thead>
 				<tr>
@@ -20,8 +20,8 @@
 			</tbody>
 		</table>
 </div>
-<form action="<c:url value='/search'/>">
-	<input type="hidden" value="{{configId}}"/>
+<form action="<c:url value='/newSearch'/>" method="post">
+	<input type="hidden" name="searchConfigId" value="{{searchConfigId}}"/>
 	<input type="submit" value="nuova ricerca" />
 </form>
 <hr />

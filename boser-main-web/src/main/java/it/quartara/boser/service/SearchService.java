@@ -4,6 +4,7 @@ import it.quartara.boser.model.Search;
 
 import java.util.List;
 
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.ws.rs.GET;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Path("/search")
+@Stateless
 public class SearchService {
 
 	private static final Logger log = LoggerFactory.getLogger(SearchService.class);

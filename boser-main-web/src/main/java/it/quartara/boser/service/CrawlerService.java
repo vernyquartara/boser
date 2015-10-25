@@ -4,6 +4,7 @@ import it.quartara.boser.model.Crawler;
 
 import java.util.List;
 
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.ws.rs.GET;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Path("/crawler")
+@Stateless
 public class CrawlerService {
 
 	private static final Logger log = LoggerFactory.getLogger(CrawlerService.class);

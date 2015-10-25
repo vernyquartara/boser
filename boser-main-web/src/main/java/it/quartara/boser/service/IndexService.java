@@ -5,6 +5,7 @@ import it.quartara.boser.model.Index;
 
 import java.util.List;
 
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.ws.rs.GET;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Path("/index")
+@Stateless
 public class IndexService {
 
 	private static final Logger log = LoggerFactory.getLogger(IndexService.class);
