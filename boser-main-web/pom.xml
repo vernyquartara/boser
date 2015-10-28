@@ -31,16 +31,6 @@
 				<version>2.6</version>
 				<configuration>
 					<failOnMissingWebXml>false</failOnMissingWebXml>
-					<webResources>
-						<resource>
-							<directory>src/main/webapp/META-INF</directory>
-							<includes>
-								<include>context.xml</include>
-							</includes>
-							<filtering>true</filtering>
-							<targetPath>META-INF</targetPath>
-						</resource>
-					</webResources>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -104,16 +94,6 @@
 			<version>1.7.10</version>
 		</dependency>
 		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-core</artifactId>
-			<version>1.1.2</version>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>1.1.2</version>
-		</dependency>
-		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-ec2</artifactId>
 			<version>1.10.2</version>
@@ -156,7 +136,7 @@
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 			<version>5.1.36</version>
-			<scope>runtime</scope>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>it.quartara.boser</groupId>
