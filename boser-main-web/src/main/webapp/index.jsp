@@ -13,7 +13,12 @@
 	<link rel="stylesheet" href="style/boser.css">
 	<script type="text/javascript" src="<c:url value="/script/angular.js"/>"></script>
 	<script type="text/javascript" src="<c:url value="/script/angular-route.js"/>"></script>
-<script type="text/javascript" src="<c:url value="/script/boser-app.js"/>"></script>
+	<script type="text/javascript" src="<c:url value="/script/boser-app.js"/>"></script>
+	<script type="text/javascript" src="<c:url value="/script/boser-routes.js"/>"></script>
+	<script type="text/javascript" src="<c:url value="/script/crawler/crawlerCtrl.js"/>"></script>
+	<script type="text/javascript" src="<c:url value="/script/search/searchCtrl.js"/>"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/angular-strap/2.3.5/angular-strap.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/angular-strap/2.3.5/angular-strap.tpl.js"></script>
 </head>
 
 <body>
@@ -30,15 +35,15 @@
   			<a href="<c:url value="/index.jsp#/search"/>" class="btn btn-primary">Ricerca</a>
 		</div> --%>
 		
-		<nav class="navbar navbar-default">
+		<nav class="navbar navbar-default" bs-navbar>
 		  <div class="container-fluid">
 		    <div class="navbar-header">
 		      <a class="navbar-brand" href="#">boser.search</a>
 		    </div>
 		    <div>
 		      <ul class="nav navbar-nav">
-		        <li class="active"><a href="#/crawler">Crawler</a></li>
-		        <li><a href="#/search">Ricerca</a></li>
+		        <li data-match-route="/crawler"><a href="#/crawler">Crawler</a></li>
+		        <li data-match-route="/search"><a href="#/search">Ricerca</a></li>
 		      </ul>
 		    </div>
 		  </div>

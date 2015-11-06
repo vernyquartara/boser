@@ -3,15 +3,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <div class="row">
-  <div class="col-sm-6">
-  
-  </div>
-  <div class="col-sm-6">
-  
+  <div class="col-sm-1 col-sm-offset-5">
+  	<h4>Benvenuto!</h4>
   </div>
 </div>
-
-<hr />
-<a href="<c:url value="/index.jsp#/home"/>">home page</a>
-</body>
-</html>
