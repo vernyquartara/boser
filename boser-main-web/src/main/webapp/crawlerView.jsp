@@ -17,7 +17,8 @@
 <!-- AVVIO -->
 <div class="row" ng-show="bntNewActive">
 	<div class="col-md-12">
-		<form class="form-horizontal" role="form">
+		<form class="form-horizontal" role="form" ng-submit="processForm()">
+			<input type="hidden" name="indexConfigId" value="1" ng-value="formData.indexConfigId">
 			<div class="form-group">
 				<label class="control-label col-sm-2" for="email">Fonti:</label>
 				<div class="col-sm-10">
@@ -40,15 +41,13 @@
 			<div class="form-group">
 				<label class="control-label col-sm-2" for="email">Depth:</label>
 				<div class="col-sm-10">
-					<input type="email" class="form-control" id="email"
-						placeholder="Enter depth">
+					<input type="number" class="form-control" id="email" placeholder="Enter depth" ng-model="formData.depth">
 				</div>
 			</div>
 			<div class="form-group">
 				<label class="control-label col-sm-2" for="pwd">TopN:</label>
 				<div class="col-sm-10">
-					<input type="password" class="form-control" id="pwd"
-						placeholder="Enter topN">
+					<input type="number" class="form-control" id="pwd" placeholder="Enter topN" ng-model="formData.topN">
 				</div>
 			</div>
 			<div class="form-group">
@@ -58,6 +57,7 @@
 			</div>
 		</form>
 	</div>
+	<pre>{{formData}}</pre>
 </div>
 
 <!-- LISTA -->

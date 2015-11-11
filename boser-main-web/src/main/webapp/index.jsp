@@ -9,7 +9,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	
-	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	<link rel="stylesheet" href="style/bootstrap.css">
 	<link rel="stylesheet" href="style/boser.css">
 	<script type="text/javascript" src="<c:url value="/script/angular.js"/>"></script>
 	<script type="text/javascript" src="<c:url value="/script/angular-route.js"/>"></script>
@@ -17,8 +17,9 @@
 	<script type="text/javascript" src="<c:url value="/script/boser-routes.js"/>"></script>
 	<script type="text/javascript" src="<c:url value="/script/crawler/crawlerCtrl.js"/>"></script>
 	<script type="text/javascript" src="<c:url value="/script/search/searchCtrl.js"/>"></script>
-	<script src="//cdnjs.cloudflare.com/ajax/libs/angular-strap/2.3.5/angular-strap.js"></script>
-	<script src="//cdnjs.cloudflare.com/ajax/libs/angular-strap/2.3.5/angular-strap.tpl.js"></script>
+	
+	<script type="text/javascript" src="<c:url value="/script/angular-strap.js"/>"></script>
+	<script type="text/javascript" src="<c:url value="/script/angular-strap.tpl.js"/>"></script>
 </head>
 
 <body>
