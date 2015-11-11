@@ -1,16 +1,19 @@
 package it.quartara.boser.service;
 
 import java.util.Date;
+import java.util.List;
 
 import it.quartara.boser.model.CrawlRequest;
 import it.quartara.boser.model.ExecutionState;
 import it.quartara.boser.model.IndexConfig;
+import it.quartara.boser.model.Search;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
@@ -27,6 +30,13 @@ public class CrawlRequestService {
 	@PersistenceContext(unitName = "BoserPU")
 	EntityManager em;
 
+	@GET
+	public List<CrawlRequest> getAll() {
+		List<CrawlRequest> elements = 
+				em.createQuery("from CrawlRequest", CrawlRequest.class).getResultList();
+		return elements;
+	}
+	
 	/**
 	 * Inserisce una nuova richiesta di indicizzazione.
 	 * Accetta MediaType.APPLICATION_FORM_URLENCODED poiché i parametri
@@ -44,12 +54,16 @@ public class CrawlRequestService {
 					   @FormParam("topN") Integer topN) {
 		log.info("insert new CrawlRequest for IndexConfig: {}", indexConfigId);
 		IndexConfig indexConfig = em.find(IndexConfig.class, indexConfigId);
+		indexConfig.setDepth(depth.shortValue());
+		indexConfig.setTopN(topN.shortValue());
+		em.merge(indexConfig);
 		CrawlRequest crawlRequest = new CrawlRequest();
 		crawlRequest.setIndexConfig(indexConfig);
 		Date now = new Date();
 		crawlRequest.setCreationDate(now);
 		crawlRequest.setLastUpdate(now);
 		crawlRequest.setState(ExecutionState.READY);
-		//em.persist(crawlRequest);
+		em.persist(crawlRequest);
 	}
+	
 }

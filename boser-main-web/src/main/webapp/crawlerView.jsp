@@ -17,27 +17,32 @@
 <!-- AVVIO -->
 <div class="row" ng-show="bntNewActive">
 	<div class="col-md-12">
-		<form class="form-horizontal" role="form" ng-submit="processForm()">
-			<input type="hidden" name="indexConfigId" value="1" ng-value="formData.indexConfigId">
+		<form class="form-horizontal" role="form" ng-submit="addNewSite()">
 			<div class="form-group">
 				<label class="control-label col-sm-2" for="email">Fonti:</label>
-				<div class="col-sm-10">
+				<div class="col-sm-9">
 					<ul class="list-group">
-						<li class="list-group-item">www.abc.com<a href="#"><span class="glyphicon glyphicon-minus pull-right"></span></a></li>
-						<li class="list-group-item">http://www.abc.com<a href="#"><span class="glyphicon glyphicon-minus pull-right"></span></a></li>
-						<li class="list-group-item">www.xyz.com<a href="#"><span class="glyphicon glyphicon-minus pull-right"></span></a></li>
+						<li class="list-group-item" ng-repeat="site in formData.sites">{{site.url}}</li>
 					</ul>
+				</div>
+				<div class="col-sm-1" style="padding-top: 5px;"  ng-repeat="site in formData.sites">
+					<button type="button" class="btn btn-primary btn-block" ng-click="removeSite(site.id)">
+						<span class="glyphicon glyphicon-minus"></span>
+					</button>
 				</div>
 			</div>
 			<div class="form-group">
 				<label class="control-label col-sm-2" for="email">Aggiungi fonte:</label>
 				<div class="col-sm-9">
-					<input type="url" class="form-control" id="newSite"	placeholder="http://site-to-crawl.com">
+					<input type="url" class="form-control" id="newSite"	placeholder="http://site-to-crawl.com" ng-model="newSite">
 				</div>
 				<div class="col-sm-1">
-					<button type="button" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-plus"></span></button>
+					<button type="submit" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-plus"></span></button>
 				</div>
 			</div>
+		</form>
+		<form class="form-horizontal" role="form" ng-submit="processForm()">
+			<input type="hidden" name="indexConfigId" value="1" ng-value="formData.indexConfigId">
 			<div class="form-group">
 				<label class="control-label col-sm-2" for="email">Depth:</label>
 				<div class="col-sm-10">
@@ -85,6 +90,16 @@
 					<td>10</td><!-- IndexConfig -->
 					<td>5000</td><!-- IndexConfig -->
 					<td>settimanale</td><!-- crawler -->
+					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td><!-- IndexConfig -->
+				</tr>
+				<tr ng-repeat="req in requests | orderBy:req.lastUpdate:desc">
+					<td>{{req.id}}</td><!-- index -->
+					<td>{{req.state}}</td><!-- index -->
+					<td>{{req.creationDate}}</td><!-- index -->
+					<td>{{req.lastUpdate}}</td><!-- index -->
+					<td>{{req.indexConfig.depth}}</td><!-- IndexConfig -->
+					<td>{{req.indexConfig.topN}}</td><!-- IndexConfig -->
+					<td>{{req.indexConfig.crawler.description}}</td><!-- crawler -->
 					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td><!-- IndexConfig -->
 				</tr>
 			</tbody>
