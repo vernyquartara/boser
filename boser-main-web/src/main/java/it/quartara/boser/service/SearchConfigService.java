@@ -1,6 +1,7 @@
 package it.quartara.boser.service;
 
 import it.quartara.boser.model.SearchConfig;
+import it.quartara.boser.model.SearchKey;
 
 import java.util.List;
 
@@ -32,4 +33,10 @@ public class SearchConfigService {
 		return Response.status(200).entity(elements).build();
 	}
 
+	@GET
+	@Path("/{id}")
+	public SearchConfig getById(@PathParam("id") Long searchConfigId) {
+		SearchConfig searchConfig = em.find(SearchConfig.class, searchConfigId);
+		return searchConfig;
+	}
 }

@@ -1,11 +1,8 @@
 package it.quartara.boser.service;
 
 import java.util.Date;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Set;
-
-import it.quartara.boser.model.SearchConfig;
-import it.quartara.boser.model.SearchKey;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
@@ -13,12 +10,14 @@ import javax.persistence.PersistenceContext;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.PathParam;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import it.quartara.boser.model.SearchConfig;
+import it.quartara.boser.model.SearchKey;
 
 @Path("/searchKey")
 @Stateless
@@ -28,36 +27,60 @@ public class SearchKeyService {
 	
 	@PersistenceContext(unitName = "BoserPU")
 	EntityManager em;
+	
+	
 
 	@POST
-	public Response insert(@FormParam("text") String param,
-			@FormParam("searchConfigId") Long searchConfigId) {
-		log.debug(param);
+	public SearchConfig insert(@FormParam("text") String text,
+							   @FormParam("searchConfigId") Long searchConfigId) {
+		log.debug("inserting new key: {}", text);
+		/*
+		 * TODO gestire l'eventuale presenza delle chiavi
+		 * (inserire solo l'associazione)
+		 */
 		
 		SearchConfig searchConfig = em.find(SearchConfig.class, searchConfigId);
-		SearchKey key = new SearchKey();
-		key.setText(param);
-		searchConfig.getKeys().add(key);
+		Set<SearchKey> keys = searchConfig.getKeys();
+		if (keys==null) {
+			keys = new HashSet<>();
+		}
+		
+		if (text.indexOf(";") == -1) {
+			SearchKey newKey = new SearchKey();
+			newKey.setText(text);
+			em.persist(newKey);
+			keys.add(newKey);
+		} else {
+			String[] keysArray = text.split(";");
+			SearchKey newParentKey = new SearchKey();
+			newParentKey.setText(keysArray[0]);
+			em.persist(newParentKey);
+			for (int i = 1; i < keysArray.length; i++) {
+				String key = keysArray[i];
+				SearchKey newKey = new SearchKey();
+				newKey.setText(key);
+				newKey.setParent(newParentKey);
+				em.persist(newKey);
+				keys.add(newKey);
+			}
+		}
 		searchConfig.setLastUpdate(new Date());
 		em.merge(searchConfig);
-		
-		return Response.status(200).entity(param).build();
+		return searchConfig;
 	}
 	
 	@DELETE
-	public Response delete(@FormParam("searchConfigId") Long searchConfigId,
-						   @FormParam("searchKeyId") Long searchKeyId) {
+	@Path("/{id}/searchConfig/{scId}")
+	public SearchConfig delete(@PathParam("scId") Long searchConfigId,
+						   @PathParam("id") Long searchKeyId) {
 		
-		SearchConfig searchConfig = null;
+		SearchConfig searchConfig = em.find(SearchConfig.class, searchConfigId);
 		Set<SearchKey> keys = searchConfig.getKeys();
-		for (SearchKey searchKey : keys) {
-			if (searchKey.getId() == searchKeyId) {
-				//em.delete(searchKey);
-			}
-		}
-		//em.merge(searchConfig);
+		SearchKey toDelete = new SearchKey();
+		toDelete.setId(searchKeyId);
+		keys.remove(toDelete);
+		em.merge(searchConfig);
 		
-		
-		return Response.status(200).entity("OK").build();
+		return searchConfig;
 	}
 }

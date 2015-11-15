@@ -32,7 +32,7 @@
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="control-label col-sm-2" for="email">Aggiungi fonte:</label>
+				<label class="control-label col-sm-2" for="newSite">Aggiungi fonte:</label>
 				<div class="col-sm-9">
 					<input type="url" class="form-control" id="newSite"	placeholder="http://site-to-crawl.com" ng-model="newSite">
 				</div>

@@ -16,43 +16,43 @@
 <!-- AVVIO -->
 <div class="row" ng-show="bntNewActive">
 	<div class="col-md-12">
-		<form class="form-horizontal" role="form">
+		<form class="form-horizontal" role="form" ng-submit="addNewKey()">
+			<input type="hidden" name="searchConfigId" ng-value="searchConfigId">
 			<div class="form-group">
-				<label class="control-label col-sm-2" for="email">Fonti:</label>
-				<div class="col-sm-10">
-					<ul class="list-group">
-						<li class="list-group-item">www.abc.com<a href="#"><span class="glyphicon glyphicon-minus pull-right"></span></a></li>
-						<li class="list-group-item">http://www.abc.com<a href="#"><span class="glyphicon glyphicon-minus pull-right"></span></a></li>
-						<li class="list-group-item">www.xyz.com<a href="#"><span class="glyphicon glyphicon-minus pull-right"></span></a></li>
+				<label class="control-label col-sm-2" for="keys">Chiavi:</label>
+				<div class="col-sm-9">
+					<ul class="list-group" id="keys">
+						<li class="list-group-item" ng-repeat="key in keys">{{key.text}}-{{key.parent.text}}</li>
 					</ul>
 				</div>
+				<div class="col-sm-1" style="padding-top: 5px;"  ng-repeat="key in keys">
+					<button type="button" class="btn btn-primary btn-block" ng-click="removeKey(key.id)">
+						<span class="glyphicon glyphicon-minus"></span>
+					</button>
+				</div>
 			</div>
 			<div class="form-group">
-				<label class="control-label col-sm-2" for="email">Aggiungi fonte:</label>
+				<label class="control-label col-sm-2"></label>
+				<div class="col-sm-10">
+					<p>per aggiungere una nuova chiave di ricerca, scrivi nel campo sottostante e premi il pulsante +.
+					puoi aggiungere più chiavi correlate fra loro usando il punto e virgola (;) come separatore:
+					i risultati per i gruppi di chiavi correlate saranno raggruppati.</p>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label col-sm-2" for="newKey">Aggiungi chiave:</label>
 				<div class="col-sm-9">
-					<input type="url" class="form-control" id="newSite"	placeholder="http://site-to-crawl.com">
+					<input type="text" class="form-control" name="newKey" placeholder="chiave (o chiavi correlate)" ng-model="newKey">
 				</div>
 				<div class="col-sm-1">
-					<button type="button" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-plus"></span></button>
+					<button type="submit" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-plus"></span></button>
 				</div>
 			</div>
-			<div class="form-group">
-				<label class="control-label col-sm-2" for="email">Depth:</label>
-				<div class="col-sm-10">
-					<input type="email" class="form-control" id="email"
-						placeholder="Enter depth">
-				</div>
-			</div>
-			<div class="form-group">
-				<label class="control-label col-sm-2" for="pwd">TopN:</label>
-				<div class="col-sm-10">
-					<input type="password" class="form-control" id="pwd"
-						placeholder="Enter topN">
-				</div>
-			</div>
+		</form>
+		<form class="form-horizontal" role="form" ng-submit="startSearch()">
 			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10">
-					<button type="submit" class="btn btn-primary">Avvia</button>
+					<button type="submit" class="btn btn-primary">Esegui ricerca</button>
 				</div>
 			</div>
 		</form>
@@ -66,23 +66,15 @@
 			<thead>
 				<tr>
 					<th>id</th>
-					<th>stato</th>
-					<th>avviato il</th>
-					<th>terminato il</th>
-					<th>depth</th>
-					<th>topN</th>
+					<th>effettuata il</th>
 					<th>crawler</th>
-					<th>fonti</th>
+					<th>chiavi</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
 					<td>1</td>
-					<td>SUCCESS</td>
 					<td>2015-11-04</td>
-					<td>2015-11-05</td>
-					<td>10</td>
-					<td>5000</td>
 					<td>settimanale</td>
 					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td>
 				</tr>
