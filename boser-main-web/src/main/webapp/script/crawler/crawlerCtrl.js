@@ -1,5 +1,5 @@
 angular.module('Boser')
-.controller('CrawlerCtrl', ['$scope','$http',function ($scope, $http) {
+.controller('CrawlerCtrl', ['$scope','$http', function ($scope, $http) {
 	/*
 	 * controllo dei pannelli lista/avvia
 	 */
@@ -93,6 +93,13 @@ angular.module('Boser')
     	    }
     	}).then(function successCallback(response) {
     		console.log("ok");
+    		$http({
+    			method: 'GET',
+    			url: 'rest/crawlRequest'
+    		}).success(function(result) {
+    			$scope.requests = result;
+    		});
+    		$scope.submenu('list');
     	}, function errorCallback(data, status, headers, config, statusText) {
     		console.log("ko");
     	});

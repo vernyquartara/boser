@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.quartara.boser.model.CrawlRequest;
+import it.quartara.boser.model.ExecutionState;
 import it.quartara.boser.model.Site;
 
 @MessageDriven(name = "CrawlerRequestQueue", activationConfig = {
@@ -81,12 +85,13 @@ public class CrawlerWorker implements MessageListener {
 			e.printStackTrace();
 		}
         
+		DateFormat df = new SimpleDateFormat("yyyyMMddHHmm");
         ProcessBuilder pb = new ProcessBuilder("/home/webny/work/apache-nutch-1.10/bin/crawl",
         									   "input",
-        									   "crawl20151027",
+        									   "crawl"+df.format(new Date()),
         									   "1");
         pb.directory(new File("/home/webny/work/apache-nutch-1.10"));
-		log.info("Run crawl command");
+		log.info("Running crawler, please wait...");
 		Process process;
 		try {
 			process = pb.start();
@@ -94,6 +99,9 @@ public class CrawlerWorker implements MessageListener {
 			log.info("crawl command executed, any errors? " + (errCode == 0 ? "No" : "Yes"));
 			log.info("crawl Output:\n" + output(process.getInputStream()));
 			log.info("exit code: " + process.exitValue());
+			request.setState(errCode==0?ExecutionState.COMPLETED:ExecutionState.ERROR);
+			request.setLastUpdate(new Date());
+			em.merge(request);
 		} catch (IOException | InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

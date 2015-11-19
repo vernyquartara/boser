@@ -3,11 +3,6 @@ package it.quartara.boser.service;
 import java.util.Date;
 import java.util.List;
 
-import it.quartara.boser.model.CrawlRequest;
-import it.quartara.boser.model.ExecutionState;
-import it.quartara.boser.model.IndexConfig;
-import it.quartara.boser.model.Search;
-
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -20,6 +15,10 @@ import javax.ws.rs.core.MediaType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import it.quartara.boser.model.CrawlRequest;
+import it.quartara.boser.model.ExecutionState;
+import it.quartara.boser.model.IndexConfig;
 
 @Stateless
 @Path("/crawlRequest")
@@ -46,6 +45,7 @@ public class CrawlRequestService {
 	 * @param indexConfigId
 	 * @param depth
 	 * @param topN
+	 * @return 
 	 */
 	@POST
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)

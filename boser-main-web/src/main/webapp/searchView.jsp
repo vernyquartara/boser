@@ -22,7 +22,10 @@
 				<label class="control-label col-sm-2" for="keys">Chiavi:</label>
 				<div class="col-sm-9">
 					<ul class="list-group" id="keys">
-						<li class="list-group-item" ng-repeat="key in keys">{{key.text}}-{{key.parent.text}}</li>
+						<li class="list-group-item" ng-repeat="key in keys">
+							{{key.text}}
+							{{key.parent!=null?key.parent.text:''}}
+						</li>
 					</ul>
 				</div>
 				<div class="col-sm-1" style="padding-top: 5px;"  ng-repeat="key in keys">

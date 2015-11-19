@@ -65,7 +65,7 @@ public class IndexConfigService {
 		}
 		Site site = new Site();
 		site.setUrl(url);
-		site.setRegexUrlFilter(url.replace("www.", "([a-z0-9]*\\.)*"));
+		site.setRegexUrlFilter("+^"+url.trim().replace("www.", "([a-z0-9]*\\.)*"));
 		sites.add(site);
 		em.persist(site);
 		em.merge(indexConfig);
