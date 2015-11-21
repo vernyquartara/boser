@@ -12,6 +12,7 @@
 	<link rel="stylesheet" href="style/bootstrap.css">
 	<link rel="stylesheet" href="style/boser.css">
 	<script type="text/javascript" src="<c:url value="/script/angular.js"/>"></script>
+	<script type="text/javascript" src="<c:url value="/script/i18n/angular-locale_it-it.js"/>"></script>
 	<script type="text/javascript" src="<c:url value="/script/angular-route.js"/>"></script>
 	<script type="text/javascript" src="<c:url value="/script/boser-app.js"/>"></script>
 	<script type="text/javascript" src="<c:url value="/script/boser-routes.js"/>"></script>

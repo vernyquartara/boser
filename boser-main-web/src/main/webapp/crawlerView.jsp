@@ -5,7 +5,6 @@
 
 <div class="row submenu">
 	<div class="col-md-6 col-md-offset-4 btn-group btn-group-justified">
-		<!-- <div class="btn-group btn-group-justified"> -->
 		<div>
 			<button type="button" class="btn btn-default" ng-class="{'active':bntListActive}" ng-click="submenu('list')">Situazione attuale</button>
 			<button type="button" class="btn btn-default" ng-class="{'active':bntNewActive}" ng-click="submenu('new')">Avvia il crawler</button>
@@ -82,21 +81,11 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>1</td><!-- index -->
-					<td>SUCCESS</td><!-- index -->
-					<td>2015-11-04</td><!-- index -->
-					<td>2015-11-05</td><!-- index -->
-					<td>10</td><!-- IndexConfig -->
-					<td>5000</td><!-- IndexConfig -->
-					<td>settimanale</td><!-- crawler -->
-					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td><!-- IndexConfig -->
-				</tr>
 				<tr ng-repeat="req in requests | orderBy:req.lastUpdate:desc">
 					<td>{{req.id}}</td><!-- index -->
 					<td>{{req.state}}</td><!-- index -->
-					<td>{{req.creationDate}}</td><!-- index -->
-					<td>{{req.lastUpdate}}</td><!-- index -->
+					<td>{{req.creationDate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- index -->
+					<td>{{req.lastUpdate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- index -->
 					<td>{{req.indexConfig.depth}}</td><!-- IndexConfig -->
 					<td>{{req.indexConfig.topN}}</td><!-- IndexConfig -->
 					<td>{{req.indexConfig.crawler.description}}</td><!-- crawler -->
