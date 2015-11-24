@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.ProcessBuilder.Redirect;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,35 +13,49 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Resource;
 import javax.ejb.ActivationConfigProperty;
+import javax.ejb.EJBContext;
+import javax.ejb.EJBException;
 import javax.ejb.MessageDriven;
+import javax.ejb.TransactionManagement;
+import javax.ejb.TransactionManagementType;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-import javax.jms.TextMessage;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
+import javax.transaction.UserTransaction;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.quartara.boser.model.CrawlRequest;
 import it.quartara.boser.model.ExecutionState;
+import it.quartara.boser.model.Parameter;
 import it.quartara.boser.model.Site;
 
 @MessageDriven(name = "CrawlerRequestQueue", activationConfig = {
 	    @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue = "queue/CrawlerRequestQueue"),
 	    @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
 	    @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
+@TransactionManagement( TransactionManagementType.BEAN )
 public class CrawlerWorker implements MessageListener {
 	
 	private final static Logger log = LoggerFactory.getLogger(CrawlerWorker.class);
 	
 	@PersistenceContext(name="BoserPU")
 	private EntityManager em;
+	
+	@Resource
+	private EJBContext context;
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -57,17 +70,18 @@ public class CrawlerWorker implements MessageListener {
 				log.warn("Message of wrong type: " + message.getClass().getName());
 			}
 		} catch (JMSException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new EJBException("error reading message from queue", e);
 		}
 		
 		CrawlRequest request = em.find(CrawlRequest.class, crawlRequestId);
 		/*
 		 * scrittura files dei parametri per il crawl
 		 */
-		String seedFileName = "/home/webny/work/apache-nutch-1.10/input/seed.txt";
-		File filtersFileTemplate = new File("/home/webny/work/apache-nutch-1.10/conf/regex-urlfilter.template");
-		File filtersFile = new File("/home/webny/work/apache-nutch-1.10/conf/regex-urlfilter.txt");
+		Parameter nutchHomeParameter = em.find(Parameter.class, "NUTCH_HOME");
+		String nutchHome = nutchHomeParameter.getValue();
+		String seedFileName = nutchHome+"/input/seed.txt";
+		File filtersFileTemplate = new File(nutchHome+"/conf/regex-urlfilter.template");
+		File filtersFile = new File(nutchHome+"/conf/regex-urlfilter.txt");
 		File seedFile = new File(seedFileName);
 		Set<Site> sites = request.getIndexConfig().getSites();
 		List<String> urls = new ArrayList<>();
@@ -81,30 +95,67 @@ public class CrawlerWorker implements MessageListener {
 			FileUtils.copyFile(filtersFileTemplate, filtersFile);
 			FileUtils.writeLines(filtersFile, filters, true);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new EJBException("unable to write crawler configuration", e);
 		}
         
 		DateFormat df = new SimpleDateFormat("yyyyMMddHHmm");
-        ProcessBuilder pb = new ProcessBuilder("/home/webny/work/apache-nutch-1.10/bin/crawl",
+        ProcessBuilder pb = new ProcessBuilder(nutchHome+"/bin/crawl",
+							        		   "-i",
+											   "-D",
+											   "solr.server.url=http://localhost:8983/solr/boser",
         									   "input",
-        									   "crawl"+df.format(new Date()),
-        									   "1");
-        pb.directory(new File("/home/webny/work/apache-nutch-1.10"));
+        									   "CRAWL"+df.format(new Date()),
+        									   Short.valueOf(request.getIndexConfig().getDepth()).toString());
+        pb.directory(new File(nutchHome));
 		log.info("Running crawler, please wait...");
 		Process process;
+		UserTransaction utx = context.getUserTransaction();
 		try {
-			process = pb.start();
-			int errCode = process.waitFor();
+			/*
+			 * prima transazione, avvio del processo
+			 */
+			utx.begin();
+			try {
+				request.setState(ExecutionState.STARTED);
+				request.setLastUpdate(new Date());
+				em.merge(request);
+				process = pb.start();
+				utx.commit();
+			} catch (IOException e) {
+				request.setState(ExecutionState.ERROR);
+				request.setLastUpdate(new Date());
+				em.merge(request);
+				utx.commit();
+				throw new EJBException("unable to start the cralwer process", e);
+			}
+			/*
+			 * seconda transazione, esecuzione del processo
+			 */
+			utx.begin();
+			int errCode;
+			try {
+				errCode = process.waitFor();
+			} catch (InterruptedException e) {
+				request.setState(ExecutionState.ERROR);
+				request.setLastUpdate(new Date());
+				em.merge(request);
+				utx.commit();
+				throw new EJBException("error executing the cralwer process", e);
+			}
 			log.info("crawl command executed, any errors? " + (errCode == 0 ? "No" : "Yes"));
-			log.info("crawl Output:\n" + output(process.getInputStream()));
+			try {
+				log.info("crawl Output:\n" + output(process.getInputStream()));
+			} catch (IOException e) {
+				log.error("error to log process output");
+			}
 			log.info("exit code: " + process.exitValue());
 			request.setState(errCode==0?ExecutionState.COMPLETED:ExecutionState.ERROR);
 			request.setLastUpdate(new Date());
 			em.merge(request);
-		} catch (IOException | InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			utx.commit();
+		} catch (NotSupportedException | SystemException | SecurityException | IllegalStateException | 
+				RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
+			throw new EJBException("unable to handle transaction", e);
 		}
 	}
 	
@@ -124,9 +175,18 @@ public class CrawlerWorker implements MessageListener {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		ProcessBuilder pb = new ProcessBuilder("C:\\Users\\verny.quartara\\test.bat", "This is ProcessBuilder Example from JCG");
-		pb.directory(new File("C:\\Users\\verny.quartara\\"));
-		System.out.println("Run echo command");
+		//ProcessBuilder pb = new ProcessBuilder("C:\\Users\\verny.quartara\\test.bat", "This is ProcessBuilder Example from JCG");
+		//pb.directory(new File("C:\\Users\\verny.quartara\\"));
+		DateFormat df = new SimpleDateFormat("yyyyMMddHHmm");
+		String nutchHome = "/home/webny/work/apache-nutch-1.10";
+		ProcessBuilder pb = new ProcessBuilder(nutchHome+"/bin/crawl",
+				"-i",
+				"-D",
+				"solr.server.url=http://localhost:8983/solr/boser",
+				"input",
+				"CRAWL"+df.format(new Date()),
+				"1");
+		pb.directory(new File(nutchHome));
 		Process process;
 		try {
 			process = pb.start();
