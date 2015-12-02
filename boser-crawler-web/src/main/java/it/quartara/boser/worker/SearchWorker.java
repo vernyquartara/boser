@@ -1,14 +1,4 @@
-package it.quartara.boser.servlet;
-
-import it.quartara.boser.action.ActionException;
-import it.quartara.boser.action.handlers.ActionHandler;
-import it.quartara.boser.action.handlers.SearchResultPersisterHandler;
-import it.quartara.boser.model.Index;
-import it.quartara.boser.model.Parameter;
-import it.quartara.boser.model.Search;
-import it.quartara.boser.model.SearchAction;
-import it.quartara.boser.model.SearchConfig;
-import it.quartara.boser.model.SearchKey;
+package it.quartara.boser.worker;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,23 +10,25 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.annotation.Resource;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.EJBContext;
+import javax.ejb.EJBException;
+import javax.ejb.MessageDriven;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.MessageListener;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
@@ -49,62 +41,70 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
-import org.hibernate.Session;
+import org.omg.CORBA.TCKind;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Effettua una nuova ricerca
- * @author webny
- *
- */
-@WebServlet("/newSearch")
-@TransactionManagement(TransactionManagementType.CONTAINER)  
-public class SearchServlet extends BoserServlet {
+import it.quartara.boser.action.ActionException;
+import it.quartara.boser.action.handlers.ActionHandler;
+import it.quartara.boser.action.handlers.SearchResultPersisterHandler;
+import it.quartara.boser.model.ExecutionState;
+import it.quartara.boser.model.Index;
+import it.quartara.boser.model.Parameter;
+import it.quartara.boser.model.Search;
+import it.quartara.boser.model.SearchAction;
+import it.quartara.boser.model.SearchConfig;
+import it.quartara.boser.model.SearchKey;
+import it.quartara.boser.model.SearchRequest;
 
-	/**	 */
-	private static final long serialVersionUID = 2118191087236072826L;
+@MessageDriven(name = "SearchRequestQueue", activationConfig = {
+	    @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue = "queue/SearchRequestQueue"),
+	    @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+	    @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
+@TransactionManagement( TransactionManagementType.BEAN )
+public class SearchWorker implements MessageListener {
 	
-	private static final Logger log = LoggerFactory.getLogger(SearchServlet.class);
+	private final static Logger log = LoggerFactory.getLogger(SearchWorker.class);
 	
-	@PersistenceContext(unitName = "BoserPU")
-	EntityManager em;
+	@PersistenceContext(name="BoserPU")
+	private EntityManager em;
+	
 	@Resource
-    UserTransaction ut;
+	private EJBContext context;
 
-	/*
-	 * 1) recupera la configurazione di ricerca per l'utente (chiavi e azioni)
-	 * 2) effettua la ricerca per ogni chiave (ed eventuali figli) (API SOLRJ)
-	 * 3) applica le azioni sui risultati di ricerca (scrive su disco e su DB)
-	 * 4) crea il file zip dei risultati
-	 * 
-	 * (non-Javadoc)
-	 * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-	 */
-	@TransactionAttribute(TransactionAttributeType.REQUIRED)
+	@SuppressWarnings("unchecked")
 	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
-		Date now = new Date();
-		String searchConfigId = req.getParameter("searchConfigId");
-		
+	public void onMessage(Message message) {
+		Long searchRequestId = null;
 		try {
-			ut.begin();
-		} catch (NotSupportedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (SystemException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			if (message instanceof MapMessage) {
+				Map<String, Object> params = message.getBody(Map.class);
+				searchRequestId = (Long) params.get("searchRequestId");
+				log.info("Received searchRequestId from queue: {}", searchRequestId);
+			} else {
+				log.warn("Message of wrong type: " + message.getClass().getName());
+			}
+		} catch (JMSException e) {
+			throw new EJBException("error reading message from queue", e);
 		}
-		SearchConfig searchConfig = em.find(SearchConfig.class, Long.valueOf(searchConfigId));
+		
+		UserTransaction tx = context.getUserTransaction();
+		try {
+			tx.begin();
+		} catch (NotSupportedException | SystemException e) {
+			throw new EJBException("impossibile avviare la transazione", e);
+		}
+		SearchRequest request = em.find(SearchRequest.class, searchRequestId);
+		log.debug("handling search request: {}", request);
+		
+		
+		Date now = new Date();
+		SearchConfig searchConfig = request.getSearchConfig();
 		Index currentIndex = getCurrentIndex(em);
 		Search search = new Search();
 		search.setConfig(searchConfig);
 		search.setIndex(currentIndex);
 		search.setTimestamp(now);
-//		Session session = (Session) em.getDelegate();
-//		session.persist(session);
 		em.persist(search);
 		
 		Parameter solrUrlParam = em.find(Parameter.class, "SOLR_URL");
@@ -117,24 +117,37 @@ public class SearchServlet extends BoserServlet {
 				| IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException e) {
 			log.error("errore durante la creazione della catena di handlers", e);
-			em.getTransaction().setRollbackOnly();
-			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			request.setLastUpdate(now);
+			request.setState(ExecutionState.ERROR);
+			em.merge(request);
+			try {
+				tx.commit();
+				return;
+			} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+					| HeuristicRollbackException | SystemException e1) {
+				throw new EJBException("impossibile effettuare commit della transazione", e1);
+			}
 		}
 		for (SearchKey key : searchConfig.getKeys()) {
-			/*
-			 * TODO gestire chiavi figlie
-			 */
-			String queryText = key.getText();
+			String queryText = key.getQuery();
 			SolrQuery query = new SolrQuery();
 			query.setQuery(queryText);
 			QueryResponse queryResponse = null;
 			try {
-				log.debug("ricerca per chiave: "+key.getText());
+				log.debug("query di ricerca: "+queryText);
 				queryResponse = solr.query(query);
 			} catch (SolrServerException e) {
-				log.error("errore durante l'esecuzione della ricerca su Solr", e);
-				em.getTransaction().setRollbackOnly();
-				throw new ServletException(e);
+				log.error("errore durante l'esecuzione della ricerca su Solr",e);
+				request.setLastUpdate(now);
+				request.setState(ExecutionState.ERROR);
+				em.merge(request);
+				try {
+					tx.commit();
+					return;
+				} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+						| HeuristicRollbackException | SystemException e1) {
+					throw new EJBException("impossibile effettuare commit della transazione", e1);
+				}
 			}
 			SolrDocumentList docList = queryResponse.getResults();
 			
@@ -145,7 +158,7 @@ public class SearchServlet extends BoserServlet {
 				} catch (ActionException e) {
 					StringBuilder buffer = new StringBuilder();
 					buffer.append("Si è verificato un errore durante l'esecuzione delle action ");
-					buffer.append("per la chiave di ricerca "+key.getText());
+					buffer.append("per la chiave di ricerca "+queryText);
 					log.error(buffer.toString(), e);
 					//continue; // or not continue???
 					/*
@@ -165,38 +178,34 @@ public class SearchServlet extends BoserServlet {
 			zipFile = createZipFile(searchPath, now);
 		} catch (IOException e) {
 			log.error("errore durante la creazione del file zip", e);
-			em.getTransaction().rollback();
-			em.close();
-			throw new ServletException(e);
+			request.setLastUpdate(now);
+			request.setState(ExecutionState.ERROR);
+			em.merge(request);
+			try {
+				tx.commit();
+				return;
+			} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+					| HeuristicRollbackException | SystemException e1) {
+				throw new EJBException("impossibile effettuare commit della transazione", e1);
+			}
 		}
 		search.setZipFilePath(zipFile.getAbsolutePath());
 		em.merge(search);
-		
-		RequestDispatcher rd = req.getRequestDispatcher("/searchHome");
-		rd.forward(req, resp);
-		
+		request.setLastUpdate(now);
+		request.setState(ExecutionState.COMPLETED);
+		em.merge(request);
 		try {
-			ut.commit();
-		} catch (IllegalStateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (HeuristicMixedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (HeuristicRollbackException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (RollbackException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SystemException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			tx.commit();
+		} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+				| HeuristicRollbackException | SystemException e) {
+			throw new EJBException("impossibile effettuare commit della transazione", e);
 		}
 	}
+	
+	
+	public static void main(String[] args) throws IOException {
+	}
+	
 
 	private Index getCurrentIndex(EntityManager em) {
 		/*

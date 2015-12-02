@@ -21,20 +21,21 @@ import javax.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.quartara.boser.model.CrawlRequest;
+import it.quartara.boser.model.ExecutionState;
+import it.quartara.boser.model.SearchRequest;
 
 @JMSDestinationDefinitions(
 	    value = {
 	        @JMSDestinationDefinition(
-	            name = "java:/queue/CrawlerRequestQueue",
+	            name = "java:/queue/SearchRequestQueue",
 	            interfaceName = "javax.jms.Queue",
-	            destinationName = "CrawlerRequestQueue"
+	            destinationName = "SearchRequestQueue"
 	        )
 	    })
 @Singleton
-public class CrawlerTimer {
+public class SearchTimer {
 	
-	private static final Logger log = LoggerFactory.getLogger(CrawlerTimer.class);
+	private static final Logger log = LoggerFactory.getLogger(SearchTimer.class);
 	
 	@PersistenceContext(name="BoserPU")
 	private EntityManager em;
@@ -42,12 +43,12 @@ public class CrawlerTimer {
 	@Inject
     private JMSContext context;
 
-    @Resource(lookup = "java:/queue/CrawlerRequestQueue")
+    @Resource(lookup = "java:/queue/SearchRequestQueue")
     private Queue queue;
 
-	@Schedule(second="15/30", minute="*", hour="*", dayOfWeek="*", dayOfMonth="*", month="*", year="*", info="MyTimer", persistent=false)
+	@Schedule(second="*/10", minute="*", hour="*", dayOfWeek="*", dayOfMonth="*", month="*", year="*", info="MyTimer", persistent=false)
     private void scheduledTimeout(final Timer t) {
-		log.debug("Controllo crawl da avviare");
+		log.debug("Controllo search da avviare");
 		/*
 		 * legge la tabella delle request.
 		 * se c'è almeno una request 'STARTED' termina.
@@ -56,10 +57,10 @@ public class CrawlerTimer {
 		 * - mette un messaggio in coda passando l'id
 		 */
 		try {
-			CrawlRequest started = 
-					em.createQuery("from CrawlRequest where state = 'STARTED'", CrawlRequest.class).getSingleResult();
+			SearchRequest started = 
+					em.createQuery("from SearchRequest where state = 'STARTED'", SearchRequest.class).getSingleResult();
 			if (started!=null) {
-				log.info("è già presente un crawl in corso: {}", started.toString());
+				log.info("è già presente una ricerca in corso: {}", started.toString());
 				return;
 			}
 		} catch (NonUniqueResultException e) {
@@ -70,14 +71,17 @@ public class CrawlerTimer {
 			log.debug("nessuna richiesta in stato STARTED");
 		}
 		
-		List<CrawlRequest> elements = 
-				em.createQuery("from CrawlRequest where state = 'READY' order by creationDate", CrawlRequest.class).getResultList();
+		List<SearchRequest> elements = 
+				em.createQuery("from SearchRequest where state = 'READY' order by creationDate", SearchRequest.class).getResultList();
 		if (elements==null || elements.isEmpty()) {
-			log.info("nessuna richiesta di crawl da eseguire.");
+			log.info("nessuna richiesta di search da eseguire.");
 			return;
 		}
+		SearchRequest requestToStart = elements.get(0);
 		Map<String, Object> params = new HashMap<>();
-		params.put("crawlRequestId", elements.get(0).getId());
+		params.put("searchRequestId", requestToStart.getId());
 		context.createProducer().send(queue, params);
+		requestToStart.setState(ExecutionState.STARTED);
+		em.merge(requestToStart);
     }
 }

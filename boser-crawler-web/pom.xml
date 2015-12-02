@@ -141,6 +141,16 @@
 			<artifactId>boser-model-core</artifactId>
 			<version>1.0.0</version>
 		</dependency>
+		<dependency>
+    		<groupId>org.apache.solr</groupId>
+    		<artifactId>solr-solrj</artifactId>
+    		<version>4.10.3</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi-ooxml</artifactId>
+		    <version>3.11</version>
+		</dependency>
 	</dependencies>
 
 

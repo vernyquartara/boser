@@ -99,18 +99,22 @@ public class CrawlerWorker implements MessageListener {
 		}
         
 		DateFormat df = new SimpleDateFormat("yyyyMMddHHmm");
+		String crawlId = "CRAWL"+df.format(new Date());
         ProcessBuilder pb = new ProcessBuilder(nutchHome+"/bin/crawl",
 							        		   "-i",
 											   "-D",
 											   "solr.server.url=http://localhost:8983/solr/boser",
         									   "input",
-        									   "CRAWL"+df.format(new Date()),
+        									   crawlId,
         									   Short.valueOf(request.getIndexConfig().getDepth()).toString());
         pb.directory(new File(nutchHome));
-		log.info("Running crawler, please wait...");
+        String logFilePath = nutchHome+"/"+crawlId+".log";
+        pb.redirectOutput(new File(logFilePath));
+		log.info("Running crawler, check log file {} and wait...", logFilePath);
 		Process process;
 		UserTransaction utx = context.getUserTransaction();
 		try {
+			utx.setTransactionTimeout(Integer.MAX_VALUE);
 			/*
 			 * prima transazione, avvio del processo
 			 */
@@ -187,6 +191,7 @@ public class CrawlerWorker implements MessageListener {
 				"CRAWL"+df.format(new Date()),
 				"1");
 		pb.directory(new File(nutchHome));
+		pb.redirectOutput(new File(nutchHome+"/out.log"));
 		Process process;
 		try {
 			process = pb.start();

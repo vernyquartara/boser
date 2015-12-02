@@ -39,12 +39,12 @@ public class TxtResultWriterHandler extends AbstractActionHandler {
 		String repo = param.getValue();
 		File repoDir = new File(repo+File.separator+search.getConfig().getId()+File.separator+search.getId());
 		repoDir.mkdirs();
-		File outputFile = new File(repoDir.getAbsolutePath()+File.separator+key.getText()+".txt");
+		File outputFile = new File(repoDir.getAbsolutePath()+File.separator+"K"+key.getId()+".txt");
 		try {
 			PrintWriter writer = new PrintWriter(outputFile);
 			writer.println(HEADER);
 			writer.println(TITLE);
-			writer.println(documents.size()+" risultati per "+key.getText()+"\r\n");
+			writer.println(documents.size()+" risultati per "+key.getQuery()+"\r\n");
 			for (int i = 0; i < documents.size(); i++) {
 				SolrDocument doc = documents.get(i);
 				writer.println(i+1+")"+doc.getFieldValue(IndexField.URL.toString()));

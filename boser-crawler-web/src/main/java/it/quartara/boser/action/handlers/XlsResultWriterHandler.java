@@ -63,7 +63,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 		
 //		Date now = new Date();
 //		DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm");
-		File outputFile = new File(repoDir.getAbsolutePath()+File.separator+key.getText()+".xls");
+		File outputFile = new File(repoDir.getAbsolutePath()+File.separator+"K"+key.getId()+".xls");
 		FileOutputStream fileOut = null;
 	    try {
 			fileOut = new FileOutputStream(outputFile);

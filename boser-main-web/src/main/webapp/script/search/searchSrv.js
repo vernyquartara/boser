@@ -9,7 +9,6 @@ angular.module('Boser')
 			})
 			.success(callbackHandler)
 			.error(errorHandler);
-			
 		},
 		insertKey: function(searchConfigId, text, callbackHandler, errorHandler) {
 			$http({
@@ -34,6 +33,30 @@ angular.module('Boser')
 	    	})
 	    	.success(callbackHandler)
 	    	.error(errorHandler);
+		},
+		getRequests: function(callbackHandler, errorHandler) {
+			$http({
+				method: 'GET',
+				url: 'rest/searchRequest'
+			})
+			.success(callbackHandler)
+			.error(errorHandler);
+		},
+		insertRequest: function(searchConfigId, callbackHandler, errorHandler) {
+			$http({
+	    		method: 'POST',
+	    		url: 'rest/searchRequest',
+	    		data: {'searchConfigId': searchConfigId},
+	    		headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+	    	    transformRequest: function(obj) {
+	    	        var str = [];
+	    	        for(var p in obj)
+	    	        str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+	    	        return str.join("&");
+	    	    }
+	    	})
+	    	.success(callbackHandler)
+			.error(errorHandler);
 		}
 	};
 }]);

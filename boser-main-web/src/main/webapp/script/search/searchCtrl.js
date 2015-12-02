@@ -54,5 +54,30 @@ angular.module('Boser')
 	 */
 	$scope.startSearch = function() {
 		console.log("start search");
+		
+		SearchSrv.insertRequest(
+			$scope.searchConfigId,
+			function(response){
+				$scope.submenu('list');
+				$scope.getList();
+			},
+			function(data, status, headers, config, statusText){
+				console.log(data);
+			}
+		);
 	}
+	/*
+	 * lista
+	 */
+	$scope.getList = function() {
+		SearchSrv.getRequests(
+			function(response){
+				$scope.requests = response;
+			},
+			function(data, status, headers, config, statusText){
+				console.log(data);
+			}
+		);
+	}
+	$scope.getList();
 }]);

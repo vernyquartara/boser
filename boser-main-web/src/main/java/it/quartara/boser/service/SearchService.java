@@ -27,10 +27,9 @@ public class SearchService {
 
 	@GET
 	@Produces("application/json")
-	public Response getList() {
-//		String response = "lista delle ricerche";
-		String response = "[{\"id\":1,\"value\":10},{\"id\":2,\"value\":20}]";
-		return Response.status(200).entity(response).build();
+	public List<Search> getList() {
+		List<Search> elements = em.createQuery("from Search", Search.class).getResultList();
+		return elements;
 	}
 	
 	@GET

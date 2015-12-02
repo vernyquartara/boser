@@ -34,10 +34,6 @@ public class SearchKeyService {
 	public SearchConfig insert(@FormParam("text") String text,
 							   @FormParam("searchConfigId") Long searchConfigId) {
 		log.debug("inserting new key: {}", text);
-		/*
-		 * TODO gestire l'eventuale presenza delle chiavi
-		 * (inserire solo l'associazione)
-		 */
 		
 		SearchConfig searchConfig = em.find(SearchConfig.class, searchConfigId);
 		Set<SearchKey> keys = searchConfig.getKeys();
@@ -45,26 +41,23 @@ public class SearchKeyService {
 			keys = new HashSet<>();
 		}
 		
-		if (text.indexOf(";") == -1) {
-			SearchKey newKey = new SearchKey();
-			newKey.setText(text);
-			em.persist(newKey);
-			keys.add(newKey);
+		SearchKey newKey = new SearchKey();
+		Set<String> terms = new HashSet<>();
+		if (text.indexOf(",") == -1) {
+			terms.add(text);
 		} else {
-			String[] keysArray = text.split(";");
-			SearchKey newParentKey = new SearchKey();
-			newParentKey.setText(keysArray[0]);
-			em.persist(newParentKey);
-			for (int i = 1; i < keysArray.length; i++) {
-				String key = keysArray[i];
-				SearchKey newKey = new SearchKey();
-				newKey.setText(key);
-				newKey.setParent(newParentKey);
-				em.persist(newKey);
-				keys.add(newKey);
+			String[] termsArray = text.split(",");
+			for (String term : termsArray) {
+				terms.add(term);
 			}
 		}
-		searchConfig.setLastUpdate(new Date());
+		Date now = new Date();
+		newKey.setTerms(terms);
+		newKey.setValidityStart(now);
+		em.persist(newKey);
+		keys.add(newKey);
+		searchConfig.setKeys(keys);
+		searchConfig.setLastUpdate(now);
 		em.merge(searchConfig);
 		return searchConfig;
 	}
