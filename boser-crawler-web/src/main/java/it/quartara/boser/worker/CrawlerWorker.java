@@ -25,7 +25,9 @@ import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
@@ -39,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import it.quartara.boser.model.CrawlRequest;
 import it.quartara.boser.model.ExecutionState;
+import it.quartara.boser.model.Index;
 import it.quartara.boser.model.Parameter;
 import it.quartara.boser.model.Site;
 
@@ -98,17 +101,18 @@ public class CrawlerWorker implements MessageListener {
 			throw new EJBException("unable to write crawler configuration", e);
 		}
         
+		Parameter solrUrlParam = em.find(Parameter.class, "SOLR_URL");
 		DateFormat df = new SimpleDateFormat("yyyyMMddHHmm");
 		String crawlId = "CRAWL"+df.format(new Date());
         ProcessBuilder pb = new ProcessBuilder(nutchHome+"/bin/crawl",
 							        		   "-i",
 											   "-D",
-											   "solr.server.url=http://localhost:8983/solr/boser",
+											   "solr.server.url="+solrUrlParam.getValue(),
         									   "input",
         									   crawlId,
         									   Short.valueOf(request.getIndexConfig().getDepth()).toString());
         pb.directory(new File(nutchHome));
-        String logFilePath = nutchHome+"/"+crawlId+".log";
+        String logFilePath = nutchHome+File.separator+"logs"+File.separator+crawlId+".log";
         pb.redirectOutput(new File(logFilePath));
 		log.info("Running crawler, check log file {} and wait...", logFilePath);
 		Process process;
@@ -116,10 +120,15 @@ public class CrawlerWorker implements MessageListener {
 		try {
 			utx.setTransactionTimeout(Integer.MAX_VALUE);
 			/*
-			 * prima transazione, avvio del processo
+			 * prima transazione, cancellazione crawl precedente
+			 * e avvio del processo
 			 */
 			utx.begin();
 			try {
+				Index currentIndex = getCurrentIndex();
+				if (currentIndex!=null) {
+					FileUtils.deleteDirectory(new File(currentIndex.getPath()));
+				}
 				request.setState(ExecutionState.STARTED);
 				request.setLastUpdate(new Date());
 				em.merge(request);
@@ -152,11 +161,21 @@ public class CrawlerWorker implements MessageListener {
 			} catch (IOException e) {
 				log.error("error to log process output");
 			}
+			Date now = new Date();
 			log.info("exit code: " + process.exitValue());
+			Index newIndex = new Index();
+			//newIndex.setConfig(request.getIndexConfig());
+			newIndex.setCreationDate(now);
+			newIndex.setPath(nutchHome+File.separator+crawlId);
+			newIndex.setDepth(request.getIndexConfig().getDepth());
+			newIndex.setTopN(request.getIndexConfig().getTopN());
+			em.persist(newIndex);
 			request.setState(errCode==0?ExecutionState.COMPLETED:ExecutionState.ERROR);
-			request.setLastUpdate(new Date());
+			request.setLastUpdate(now);
+			request.setIndex(newIndex);
 			em.merge(request);
 			utx.commit();
+			log.info("done.");
 		} catch (NotSupportedException | SystemException | SecurityException | IllegalStateException | 
 				RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
 			throw new EJBException("unable to handle transaction", e);
@@ -176,6 +195,19 @@ public class CrawlerWorker implements MessageListener {
 			br.close();
 		}
 		return sb.toString();
+	}
+	
+	private Index getCurrentIndex() {
+		String query = "from Index i where i.creationDate = "
+				+ "(select max(creationDate) from Index)";
+		TypedQuery<Index> index = em.createQuery(query, Index.class);
+		try {
+			return index.getSingleResult();
+		} catch (NoResultException e) {
+			log.warn("nessun indice presente su DB (è il primo crawl?)");
+			return null;
+		}
+		
 	}
 	
 	public static void main(String[] args) throws IOException {

@@ -3,10 +3,6 @@ package it.quartara.boser.model;
 import java.util.Date;
 
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -15,42 +11,33 @@ public class Index extends PersistentEntity {
 
 	private static final long serialVersionUID = -2491066971995901349L;
 	
-	private Date whenStarted;
-	private Date whenTerminated;
+	private Date creationDate;
 	private String path;
-	@ManyToOne(fetch=FetchType.EAGER)
-	private IndexConfig config;
-	@Enumerated(EnumType.STRING)
-	private ExecutionState state;
+	private short depth;
+	private short topN;
 	
-	public Date getWhenStarted() {
-		return whenStarted;
-	}
-	public void setWhenStarted(Date whenStarted) {
-		this.whenStarted = whenStarted;
-	}
-	public Date getWhenTerminated() {
-		return whenTerminated;
-	}
-	public void setWhenTerminated(Date whenTerminated) {
-		this.whenTerminated = whenTerminated;
-	}
 	public String getPath() {
 		return path;
 	}
 	public void setPath(String path) {
 		this.path = path;
 	}
-	public IndexConfig getConfig() {
-		return config;
+	public Date getCreationDate() {
+		return creationDate;
 	}
-	public void setConfig(IndexConfig config) {
-		this.config = config;
+	public void setCreationDate(Date creationDate) {
+		this.creationDate = creationDate;
 	}
-	public ExecutionState getState() {
-		return state;
+	public short getDepth() {
+		return depth;
 	}
-	public void setState(ExecutionState state) {
-		this.state = state;
+	public void setDepth(short depth) {
+		this.depth = depth;
+	}
+	public short getTopN() {
+		return topN;
+	}
+	public void setTopN(short topN) {
+		this.topN = topN;
 	}
 }

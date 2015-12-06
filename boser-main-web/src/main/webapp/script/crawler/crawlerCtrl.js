@@ -54,6 +54,7 @@ angular.module('Boser')
     		 */
     		console.log("ok "+response);
     		$scope.formData.sites = response.sites;
+    		$scope.newSite = '';
     	}).error(function(data, status, headers, config, statusText) {
     		console.log("ko");
     	});

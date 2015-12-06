@@ -11,7 +11,7 @@ public class SearchRequest extends AsyncRequest {
 	
 	private static final long serialVersionUID = -7256088880635332385L;
 	
-	@ManyToOne
+	@ManyToOne(optional=false)
 	private SearchConfig searchConfig;
 	@OneToOne(optional=true)
 	private Search search;

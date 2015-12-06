@@ -28,7 +28,7 @@
 						</li>
 					</ul>
 				</div>
-				<div class="col-sm-1" style="padding-top: 5px;" ng-repeat="key in keys">
+				<div class="col-sm-1" style="padding-top: 5px;padding-bottom: 2px;" ng-repeat="key in keys">
 					<button type="button" class="btn btn-primary btn-block" ng-click="removeKey(key.id)">
 						<span class="glyphicon glyphicon-minus"></span>
 					</button>
@@ -86,7 +86,7 @@
 					<td>{{req.state}}</td><!-- request -->
 					<td>{{req.creationDate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- request -->
 					<td>{{req.lastUpdate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- request -->
-					<td><a href="<c:url value="/searchDownload"/>?searchId={{req.search.id}}">{{req.search.zipFilePath}}</a></td><!-- search -->
+					<td><a href="<c:url value="/searchDownload"/>?searchId={{req.search.id}}">{{req.search.zipLabel}}</a></td><!-- search -->
 					<td>{{req.searchConfig.crawler.description}}</td><!-- crawler -->
 					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td>
 				</tr>

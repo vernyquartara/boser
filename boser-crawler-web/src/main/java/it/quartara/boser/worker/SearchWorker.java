@@ -28,7 +28,6 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
@@ -48,7 +47,6 @@ import it.quartara.boser.action.ActionException;
 import it.quartara.boser.action.handlers.ActionHandler;
 import it.quartara.boser.action.handlers.SearchResultPersisterHandler;
 import it.quartara.boser.model.ExecutionState;
-import it.quartara.boser.model.Index;
 import it.quartara.boser.model.Parameter;
 import it.quartara.boser.model.Search;
 import it.quartara.boser.model.SearchAction;
@@ -103,10 +101,8 @@ public class SearchWorker implements MessageListener {
 		 */
 		Date now = new Date();
 		SearchConfig searchConfig = request.getSearchConfig();
-		Index currentIndex = getCurrentIndex(em);
 		Search search = new Search();
 		search.setConfig(searchConfig);
-		search.setIndex(currentIndex);
 		search.setTimestamp(now);
 		em.persist(search);
 		Parameter param = em.find(Parameter.class, "SEARCH_REPO");
@@ -219,17 +215,6 @@ public class SearchWorker implements MessageListener {
 	public static void main(String[] args) throws IOException {
 	}
 	
-
-	private Index getCurrentIndex(EntityManager em) {
-		/*
-		 * TODO rivedere e spostare la query
-		 */
-		String query = "from Index i where i.whenTerminated = "
-				+ "(select max(whenTerminated) from Index)";
-		TypedQuery<Index> index = em.createQuery(query, Index.class);
-		return index.getSingleResult();
-	}
-
 	private ActionHandler createHandlerChain(Set<SearchAction> actions,	EntityManager em, File searchRepo) 
 			throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException,
 				   IllegalAccessException, IllegalArgumentException, InvocationTargetException {

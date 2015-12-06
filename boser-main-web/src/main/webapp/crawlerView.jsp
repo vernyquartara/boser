@@ -24,7 +24,7 @@
 						<li class="list-group-item" ng-repeat="site in formData.sites">{{site.url}}</li>
 					</ul>
 				</div>
-				<div class="col-sm-1" style="padding-top: 5px;"  ng-repeat="site in formData.sites">
+				<div class="col-sm-1" style="padding-top: 5px;padding-bottom: 2px;"  ng-repeat="site in formData.sites">
 					<button type="button" class="btn btn-primary btn-block" ng-click="removeSite(site.id)">
 						<span class="glyphicon glyphicon-minus"></span>
 					</button>
@@ -72,11 +72,11 @@
 				<tr>
 					<th>id</th>
 					<th>stato</th>
-					<th>avviato il</th>
-					<th>terminato il</th>
+					<th>richiesto il</th>
+					<th>ultimo aggiornamento</th>
 					<th>depth</th>
 					<th>topN</th>
-					<th>crawler</th>
+					<!-- <th>crawler</th> -->
 					<th>fonti</th>
 				</tr>
 			</thead>
@@ -86,9 +86,9 @@
 					<td>{{req.state}}</td><!-- index -->
 					<td>{{req.creationDate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- index -->
 					<td>{{req.lastUpdate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- index -->
-					<td>{{req.indexConfig.depth}}</td><!-- IndexConfig -->
-					<td>{{req.indexConfig.topN}}</td><!-- IndexConfig -->
-					<td>{{req.indexConfig.crawler.description}}</td><!-- crawler -->
+					<td>{{req.index.depth}}</td><!-- IndexConfig -->
+					<td>{{req.index.topN}}</td><!-- IndexConfig -->
+					<!-- <td>{{req.index.crawler.description}}</td> --><!-- crawler -->
 					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td><!-- IndexConfig -->
 				</tr>
 			</tbody>
