@@ -41,7 +41,6 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
-import org.omg.CORBA.TCKind;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,7 +86,9 @@ public class SearchWorker implements MessageListener {
 		} catch (JMSException e) {
 			throw new EJBException("error reading message from queue", e);
 		}
-		
+		/*
+		 * avvio transazione gestita a mano
+		 */
 		UserTransaction tx = context.getUserTransaction();
 		try {
 			tx.begin();
@@ -97,7 +98,9 @@ public class SearchWorker implements MessageListener {
 		SearchRequest request = em.find(SearchRequest.class, searchRequestId);
 		log.debug("handling search request: {}", request);
 		
-		
+		/*
+		 * creazione nuova ricerca e relativa cartella su fs per i risultati
+		 */
 		Date now = new Date();
 		SearchConfig searchConfig = request.getSearchConfig();
 		Index currentIndex = getCurrentIndex(em);
@@ -106,12 +109,21 @@ public class SearchWorker implements MessageListener {
 		search.setIndex(currentIndex);
 		search.setTimestamp(now);
 		em.persist(search);
-		
+		Parameter param = em.find(Parameter.class, "SEARCH_REPO");
+		String repo = param.getValue();
+		String searchPath = repo+File.separator+searchConfig.getId()+File.separator+search.getId();
+		File searchRepo = new File(searchPath);
+		if (searchRepo.mkdirs()) {
+			log.debug("creata cartella: {}", searchRepo.getAbsolutePath());
+		}
+		/*
+		 * creazione catena di handlers per la gestione dei risultati di ricerca
+		 */
 		Parameter solrUrlParam = em.find(Parameter.class, "SOLR_URL");
 		HttpSolrServer solr = new HttpSolrServer(solrUrlParam.getValue());
 		ActionHandler handlers = null;
 		try {
-			handlers = createHandlerChain(searchConfig.getActions(), em);
+			handlers = createHandlerChain(searchConfig.getActions(), em, searchRepo);
 		} catch (ClassNotFoundException | NoSuchMethodException
 				| SecurityException | InstantiationException
 				| IllegalAccessException | IllegalArgumentException
@@ -128,13 +140,17 @@ public class SearchWorker implements MessageListener {
 				throw new EJBException("impossibile effettuare commit della transazione", e1);
 			}
 		}
+		/*
+		 * per ogni chiave si effettua una ricerca su solr
+		 * e si passano i risultati alla catena di handlers per l'elaborazione
+		 */
 		for (SearchKey key : searchConfig.getKeys()) {
 			String queryText = key.getQuery();
 			SolrQuery query = new SolrQuery();
 			query.setQuery(queryText);
 			QueryResponse queryResponse = null;
 			try {
-				log.debug("query di ricerca: "+queryText);
+				log.debug("esecuzione ricerca su Sorl, query: "+queryText);
 				queryResponse = solr.query(query);
 			} catch (SolrServerException e) {
 				log.error("errore durante l'esecuzione della ricerca su Solr",e);
@@ -150,29 +166,25 @@ public class SearchWorker implements MessageListener {
 				}
 			}
 			SolrDocumentList docList = queryResponse.getResults();
-			
-			if (!docList.isEmpty()) {
-				try {
-					log.debug("avvio gestione actions");
-					handlers.handle(search, key, docList);
-				} catch (ActionException e) {
-					StringBuilder buffer = new StringBuilder();
-					buffer.append("Si è verificato un errore durante l'esecuzione delle action ");
-					buffer.append("per la chiave di ricerca "+queryText);
-					log.error(buffer.toString(), e);
-					//continue; // or not continue???
-					/*
-					 * TODO impostare stato ERRORE per la ricerca??
-					 */
-				}
+			log.debug("Solr restituisce {} risultati", docList.size());
+			try {
+				log.debug("avvio gestione actions");
+				handlers.handle(search, key, docList);
+			} catch (ActionException e) {
+				StringBuilder buffer = new StringBuilder();
+				buffer.append("Si è verificato un errore durante l'esecuzione delle action ");
+				buffer.append("per la chiave di ricerca "+queryText);
+				log.error(buffer.toString(), e);
+				//continue; // or not continue???
+				/*
+				 * TODO impostare stato ERRORE per la ricerca??
+				 * quali errori potrebbero verificarsi?
+				 */
 			}
 		}
 		/*
-		 * TODO creazione del file zip e creazione oggetto Search
+		 * TODO creazione del file zip con i risultati.
 		 */
-		Parameter param = em.find(Parameter.class, "SEARCH_REPO");
-		String repo = param.getValue();
-		String searchPath = repo+File.separator+searchConfig.getId()+File.separator+search.getId();
 		File zipFile = null;
 		try {
 			zipFile = createZipFile(searchPath, now);
@@ -191,6 +203,7 @@ public class SearchWorker implements MessageListener {
 		}
 		search.setZipFilePath(zipFile.getAbsolutePath());
 		em.merge(search);
+		request.setSearch(search);
 		request.setLastUpdate(now);
 		request.setState(ExecutionState.COMPLETED);
 		em.merge(request);
@@ -217,25 +230,23 @@ public class SearchWorker implements MessageListener {
 		return index.getSingleResult();
 	}
 
-	private ActionHandler createHandlerChain(Set<SearchAction> actions,	EntityManager em) 
+	private ActionHandler createHandlerChain(Set<SearchAction> actions,	EntityManager em, File searchRepo) 
 			throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException,
 				   IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		ActionHandler firstHandler = null, currentHandler = null;
+		ActionHandler firstHandler = new SearchResultPersisterHandler(em, searchRepo); 
+		ActionHandler currentHandler = null;
 		for (SearchAction action : actions) {
 			Class<?> handlerClass = Class.forName(action.getHandlerClass());
-			Constructor<?> handlerConstructor = handlerClass.getConstructor(EntityManager.class);
-			ActionHandler handler = (ActionHandler) handlerConstructor.newInstance(em);
-			if (firstHandler == null) {
-				firstHandler = handler;
-			}
+			Constructor<?> handlerConstructor = handlerClass.getConstructor(EntityManager.class, File.class);
+			ActionHandler handler = (ActionHandler) handlerConstructor.newInstance(em, searchRepo);
 			if (currentHandler == null) {
+				firstHandler.setNextHandler(handler);
 				currentHandler = handler;
 			} else {
 				currentHandler.setNextHandler(handler);
 				currentHandler = handler;
 			}
 		}
-		currentHandler.setNextHandler(new SearchResultPersisterHandler(em));
 		return firstHandler;
 	}
 	

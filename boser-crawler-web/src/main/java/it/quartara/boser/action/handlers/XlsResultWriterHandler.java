@@ -3,10 +3,6 @@ package it.quartara.boser.action.handlers;
 import static it.quartara.boser.model.IndexField.TITLE;
 import static it.quartara.boser.model.IndexField.URL;
 import static org.apache.poi.ss.usermodel.Cell.CELL_TYPE_STRING;
-import it.quartara.boser.action.ActionException;
-import it.quartara.boser.model.Parameter;
-import it.quartara.boser.model.Search;
-import it.quartara.boser.model.SearchKey;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -31,6 +27,12 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import it.quartara.boser.action.ActionException;
+import it.quartara.boser.model.Search;
+import it.quartara.boser.model.SearchKey;
 
 /**
  * Scrive i risultati di ricerca in formato Excel.
@@ -47,23 +49,21 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	
 	//static Pattern urlPattern = Pattern.compile("//[\\w|\\d]+\\.([\\w|\\d]+\\.[\\w|\\d]+)");
 	static final String JAVA_AWT_HEADLESS = "java.awt.headless";
+	
+	private static final Logger log = LoggerFactory.getLogger(XlsResultWriterHandler.class);
 
-	public XlsResultWriterHandler(EntityManager em) {
-		super(em);
+	public XlsResultWriterHandler(EntityManager em, File searchRepo) {
+		super(em, searchRepo);
 	}
 
 	@Override
 	protected void execute(Search search, SearchKey key, SolrDocumentList documents) throws ActionException {
 		String headless = System.getProperty(JAVA_AWT_HEADLESS);
 		System.setProperty(JAVA_AWT_HEADLESS, "true");
-		Parameter param = em.find(Parameter.class, "SEARCH_REPO");
-		String repo = param.getValue();
-		File repoDir = new File(repo+File.separator+search.getConfig().getId()+File.separator+search.getId());
-		repoDir.mkdirs();
-		
-//		Date now = new Date();
-//		DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm");
-		File outputFile = new File(repoDir.getAbsolutePath()+File.separator+"K"+key.getId()+".xls");
+		File outputFile = new File(searchRepo.getAbsolutePath()+File.separator
+									+"RES-"+getSearchResultFileNameSubstringByKey(key)
+									+"-K"+key.getId()
+									+".xls");
 		FileOutputStream fileOut = null;
 	    try {
 			fileOut = new FileOutputStream(outputFile);
@@ -138,6 +138,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 			wb.write(fileOut);
 			fileOut.close();
 			wb.close();
+			log.info("wrote file: {}", outputFile.getAbsolutePath());
 		} catch (IOException e) {
 			throw new ActionException("unable to write to file: "+outputFile.getAbsolutePath());
 		} finally {

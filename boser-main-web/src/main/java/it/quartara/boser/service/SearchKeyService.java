@@ -44,11 +44,11 @@ public class SearchKeyService {
 		SearchKey newKey = new SearchKey();
 		Set<String> terms = new HashSet<>();
 		if (text.indexOf(",") == -1) {
-			terms.add(text);
+			terms.add(text.trim());
 		} else {
 			String[] termsArray = text.split(",");
 			for (String term : termsArray) {
-				terms.add(term);
+				terms.add(term.trim());
 			}
 		}
 		Date now = new Date();
@@ -66,12 +66,14 @@ public class SearchKeyService {
 	@Path("/{id}/searchConfig/{scId}")
 	public SearchConfig delete(@PathParam("scId") Long searchConfigId,
 						   @PathParam("id") Long searchKeyId) {
+		Date now = new Date();
+		SearchKey keyToDelete = em.find(SearchKey.class, searchKeyId);
+		keyToDelete.setValidityEnd(now);
 		
 		SearchConfig searchConfig = em.find(SearchConfig.class, searchConfigId);
 		Set<SearchKey> keys = searchConfig.getKeys();
-		SearchKey toDelete = new SearchKey();
-		toDelete.setId(searchKeyId);
-		keys.remove(toDelete);
+		keys.remove(keyToDelete);
+		searchConfig.setLastUpdate(now);
 		em.merge(searchConfig);
 		
 		return searchConfig;

@@ -3,6 +3,7 @@ package it.quartara.boser.model;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 
 @Entity
 @DiscriminatorValue("S")
@@ -12,6 +13,7 @@ public class SearchRequest extends AsyncRequest {
 	
 	@ManyToOne
 	private SearchConfig searchConfig;
+	@OneToOne(optional=true)
 	private Search search;
 
 	public SearchConfig getSearchConfig() {

@@ -1,14 +1,28 @@
 package it.quartara.boser.action.handlers;
 
-import static it.quartara.boser.model.IndexField.*;
-import it.quartara.boser.model.Search;
-import it.quartara.boser.model.SearchKey;
-import it.quartara.boser.model.SearchResult;
+import static it.quartara.boser.model.IndexField.TITLE;
+import static it.quartara.boser.model.IndexField.URL;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.persistence.EntityManager;
 
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import it.quartara.boser.action.ActionException;
+import it.quartara.boser.model.Search;
+import it.quartara.boser.model.SearchKey;
+import it.quartara.boser.model.SearchResult;
+import it.quartara.boser.model.SearchResultPK;
 
 /**
  * Gestisce la persistenza dei risultati di ricerca.
@@ -16,23 +30,69 @@ import org.apache.solr.common.SolrDocumentList;
  *
  */
 public class SearchResultPersisterHandler extends AbstractActionHandler {
+	
+	private static final Logger log = LoggerFactory.getLogger(SearchResultPersisterHandler.class);
+	
+	private static final String FILE_TITLE = "DUPLICATI DELLA RICERCA\r\n";
 
-	public SearchResultPersisterHandler(EntityManager em) {
-		super(em);
+	public SearchResultPersisterHandler(EntityManager em, File searchRepo) {
+		super(em, searchRepo);
 	}
 
 	@Override
-	protected void execute(Search search, SearchKey key, SolrDocumentList documents) {
+	protected void execute(Search search, SearchKey key, SolrDocumentList documents) throws ActionException {
+		Map<SearchResult, SolrDocument> duplicatedMap = new HashMap<SearchResult, SolrDocument>();
 		for (SolrDocument doc : documents) {
-			SearchResult searchResult = new SearchResult();
-			searchResult.setSearch(search);
-			searchResult.setKey(key);
-			searchResult.setUrl((String) doc.getFieldValue(URL.toString()));
-			//searchResult.setContent((String) doc.getFieldValue(CONTENT.toString()));
-			searchResult.setTitle((String) doc.getFieldValue(TITLE.toString()));
-			em.persist(searchResult);
+			String url = (String) doc.getFieldValue(URL.toString());
+			String title = (String) doc.getFieldValue(TITLE.toString());
+			SearchResultPK pk = new SearchResultPK(url, key.getId(), title);
+			SearchResult searchResult = em.find(SearchResult.class, pk);
+			if (searchResult==null) {
+				searchResult = new SearchResult();
+				searchResult.setSearch(search);
+				searchResult.setKey(key);
+				searchResult.setUrl(url);
+				searchResult.setTitle(title);
+				em.persist(searchResult);
+			} else {
+				log.warn("DUPLICATO: {}", pk);
+				duplicatedMap.put(searchResult, doc);
+			}
+		}
+		if (!duplicatedMap.isEmpty()) {
+			log.debug("rimozione duplicati e creazione file dei duplicati");
+			documents.removeAll(duplicatedMap.values());
+			File duplicatedFile = new File(searchRepo.getAbsolutePath()+File.separator
+											+"DUP-"+getSearchResultFileNameSubstringByKey(key)
+											+"-K"+key.getId()
+											+".txt");
+			try {
+				PrintWriter writer = new PrintWriter(duplicatedFile);
+				writer.println(FILE_HEADER);
+				writer.println(FILE_TITLE);
+				writer.println(duplicatedMap.size()+" duplicati per "+key.getQuery()+"\r\n");
+				int i = 1;
+				for (Entry<SearchResult, SolrDocument> entry : duplicatedMap.entrySet()) {
+					SearchResult searchResult = entry.getKey();
+					SolrDocument doc = entry.getValue();
+					writer.println(i++ +")"+doc.getFieldValue(URL.toString()));
+					writer.println(doc.getFieldValue(TITLE.toString()));
+					StringBuilder buffer = new StringBuilder();
+					buffer.append("Archiviato il ");
+					buffer.append(DateFormatUtils.format(searchResult.getSearch().getTimestamp(), "dd/MM/yy"));
+					buffer.append(", configurazione di ricerca: ");
+					buffer.append(searchResult.getSearch().getConfig().getDescription());
+					buffer.append(", crawler: ");
+					buffer.append(searchResult.getSearch().getConfig().getCrawler().getDescription());
+					writer.println(buffer.toString()+"\r\n");
+				}
+				writer.close();
+				log.info("wrote file: {}", duplicatedFile.getAbsolutePath());
+			} catch (IOException e) {
+				String msg = "problema di scrittura file dei duplicati";
+				throw new ActionException(msg, e);
+			}
 		}
 	}
-
 
 }

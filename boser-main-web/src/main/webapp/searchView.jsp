@@ -86,8 +86,8 @@
 					<td>{{req.state}}</td><!-- request -->
 					<td>{{req.creationDate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- request -->
 					<td>{{req.lastUpdate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- request -->
-					<td><a href="">{{search.zipFilePath}}</a></td><!-- search -->
-					<td>{{search.config.crawler.description}}</td><!-- crawler -->
+					<td><a href="<c:url value="/searchDownload"/>?searchId={{req.search.id}}">{{req.search.zipFilePath}}</a></td><!-- search -->
+					<td>{{req.searchConfig.crawler.description}}</td><!-- crawler -->
 					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td>
 				</tr>
 			</tbody>

@@ -23,8 +23,9 @@ public class SearchConfig extends PersistentEntity {
 	/*
 	 * orphanRemoval=true funziona solo in combinazione con CascadeType.PERSIST
 	 * http://stackoverflow.com/questions/24579374/jpa-2-hibernate-orphan-removal-still-not-working-with-onetomany
+	 * 2/12/2015 orphanRemoval=true è stato rimosso poiché la cancellazione delle chiavi è diventata logica e non fisica
 	 */
-	@OneToMany(fetch=FetchType.EAGER,cascade={CascadeType.MERGE,CascadeType.PERSIST}, orphanRemoval=true)
+	@OneToMany(fetch=FetchType.EAGER,cascade={CascadeType.MERGE,CascadeType.PERSIST}, orphanRemoval=false)
 	private Set<SearchKey> keys;
 	
 	private String description;
