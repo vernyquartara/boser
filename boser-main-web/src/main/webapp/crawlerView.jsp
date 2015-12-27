@@ -51,7 +51,7 @@
 			<div class="form-group">
 				<label class="control-label col-sm-2" for="pwd">TopN:</label>
 				<div class="col-sm-10">
-					<input type="number" class="form-control" id="pwd" placeholder="Enter topN" ng-model="formData.topN">
+					<input type="number" class="form-control" id="pwd" placeholder="Enter topN" ng-model="formData.topN" disabled="disabled">
 				</div>
 			</div>
 			<div class="form-group">
@@ -61,11 +61,12 @@
 			</div>
 		</form>
 	</div>
-	<pre>{{formData}}</pre>
+	<!-- <pre>{{formData}}</pre> -->
 </div>
 
 <!-- LISTA -->
 <div class="row" ng-show="bntListActive">
+	<caption>Indicizzazioni eseguite</caption>
 	<div class="table-responsive">
 		<table class="table table-striped">
 			<thead>

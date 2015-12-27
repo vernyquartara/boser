@@ -37,8 +37,8 @@
 			<div class="form-group">
 				<label class="control-label col-sm-2"></label>
 				<div class="col-sm-10">
-					<p>Per aggiungere una nuova chiave di ricerca, scrivi nel campo sottostante e premi il pulsante +.
-					puoi aggiungere più chiavi correlate fra loro usando la virgola (,) come separatore:
+					<p>Per aggiungere una nuova chiave di ricerca, scrivi nel campo sottostante e premi il pulsante +.</p>
+					<p>Puoi aggiungere più chiavi correlate fra loro usando la virgola (,) come separatore:
 					i risultati per i gruppi di chiavi correlate saranno raggruppati.</p>
 				</div>
 			</div>
@@ -66,7 +66,7 @@
 
 <!-- LISTA -->
 <div class="row" ng-show="bntListActive">
-	<caption>Elenco delle ricerche</caption>
+	<caption>Ricerche effettuate</caption>
 	<div class="table-responsive">
 		<table class="table table-striped">
 			<thead>
