@@ -46,6 +46,7 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 			String url = (String) doc.getFieldValue(URL.toString());
 			String title = (String) doc.getFieldValue(TITLE.toString());
 			SearchResultPK pk = new SearchResultPK(url, key.getId(), title);
+			log.debug("search result pk: {}", pk);
 			SearchResult searchResult = em.find(SearchResult.class, pk);
 			if (searchResult==null) {
 				searchResult = new SearchResult();
