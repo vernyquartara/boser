@@ -45,6 +45,9 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 		for (SolrDocument doc : documents) {
 			String url = (String) doc.getFieldValue(URL.toString());
 			String title = (String) doc.getFieldValue(TITLE.toString());
+			if (title==null) {
+				title = "";
+			}
 			SearchResultPK pk = new SearchResultPK(url, key.getId(), title);
 			log.debug("search result pk: {}", pk);
 			SearchResult searchResult = em.find(SearchResult.class, pk);
