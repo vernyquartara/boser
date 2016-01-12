@@ -44,7 +44,7 @@
 		<welcome-file>index.jsp</welcome-file>
 	</welcome-file-list>
 
-	<!-- <security-constraint>
+	<security-constraint>
 		<web-resource-collection>
 			<web-resource-name>Restricted Access</web-resource-name>
 			<url-pattern>/*</url-pattern>
@@ -59,12 +59,12 @@
 	
 	<login-config>
 		<auth-method>BASIC</auth-method>
-		<realm-name>collaudo-boser</realm-name>
+		<realm-name>ApplicationRealm</realm-name>
 	</login-config>
 
 	<security-role>
 		<role-name>Boser</role-name>
-	</security-role> -->
+	</security-role>
 
 	<jsp-config>
 		<jsp-property-group>
