@@ -54,7 +54,7 @@ import it.quartara.boser.model.SearchConfig;
 import it.quartara.boser.model.SearchKey;
 import it.quartara.boser.model.SearchRequest;
 
-@MessageDriven(name = "SearchRequestQueue", activationConfig = {
+@MessageDriven(name = "SearchWorker", activationConfig = {
 	    @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue = "queue/SearchRequestQueue"),
 	    @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
 	    @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
@@ -144,6 +144,8 @@ public class SearchWorker implements MessageListener {
 			String queryText = key.getQuery();
 			SolrQuery query = new SolrQuery();
 			query.setQuery(queryText);
+			query.setStart(0);
+			query.setRows(Integer.MAX_VALUE);
 			QueryResponse queryResponse = null;
 			try {
 				log.debug("esecuzione ricerca su Sorl, query: "+queryText);

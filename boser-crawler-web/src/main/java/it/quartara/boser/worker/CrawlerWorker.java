@@ -45,7 +45,7 @@ import it.quartara.boser.model.Index;
 import it.quartara.boser.model.Parameter;
 import it.quartara.boser.model.Site;
 
-@MessageDriven(name = "CrawlerRequestQueue", activationConfig = {
+@MessageDriven(name = "CrawlerWorker", activationConfig = {
 	    @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue = "queue/CrawlerRequestQueue"),
 	    @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
 	    @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })

@@ -13,6 +13,7 @@ import java.net.URL;
 
 import javax.persistence.EntityManager;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.hssf.util.HSSFColor;
@@ -100,6 +101,12 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    defaultCellStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
 	    defaultCellStyle.setFont(defaultFont);
 	    
+	    Font linkFont = wb.createFont();
+	    linkFont.setUnderline(Font.U_SINGLE);
+	    linkFont.setColor(IndexedColors.BLUE.getIndex());
+	    CellStyle linkStyle = wb.createCellStyle();
+	    linkStyle.setFont(linkFont);
+	    
 	    Sheet sheet = wb.createSheet("Foglio1");
 	    createHeader(sheet, headerStyle);
 	    int rowCounter = 1;
@@ -114,11 +121,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 			Hyperlink link = createHelper.createHyperlink(Hyperlink.LINK_URL);
 			String url = (String)doc.getFieldValue(URL.toString());
 			link.setAddress(url);
-			Font linkFont = wb.createFont();
-		    linkFont.setUnderline(Font.U_SINGLE);
-		    linkFont.setColor(IndexedColors.BLUE.getIndex());
-		    CellStyle linkStyle = wb.createCellStyle();
-		    linkStyle.setFont(linkFont);
+			
 		    Cell cell0 = row.getCell(0);
 		    cell0.setHyperlink(link);
 		    cell0.setCellValue(getLinkLabel(url));
@@ -153,7 +156,10 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 		try {
 			URL parsed = new URL(url);
 			String host = parsed.getHost();
-			return host.substring(host.indexOf(".")+1);
+			if (StringUtils.countMatches(host, ".") > 1) {
+				return host.replace("www.", "");
+			}
+			return host;
 		} catch (MalformedURLException e) {
 			throw new ActionException("unable to match link url in string: " + url, e);
 		}
