@@ -16,15 +16,24 @@
 <!-- AVVIO -->
 <div class="row" ng-show="bntNewActive">
 	<div class="col-md-12">
-		<form class="form-horizontal" role="form" ng-submit="addNewKey()">
+		<form class="form-horizontal" role="form" ng-submit="addNewKey()" name="keysForm">
 			<input type="hidden" name="searchConfigId" ng-value="searchConfigId">
 			<div class="form-group">
 				<label class="control-label col-sm-2" for="keys">Chiavi di ricerca:</label>
 				<div class="col-sm-9">
 					<span ng-if="keys.length == 0">Nessuna. Aggiungi almeno una chiave per effettuare le ricerche.</span>
 					<ul class="list-group" id="keys" ng-if="keys.length > 0">
-						<li class="list-group-item" ng-repeat="key in keys">
+						<li class="list-group-item" ng-repeat="key in keys" ng-click="editKey(key.id, $event)">
 							{{key.terms.join(', ')}}
+							<!-- <div ng-if="editable(key.id)">
+								<input type="text" id="key{{key.id}}" value="{{key.terms.join(', ')}}" ng-keypress="dontSubmit($event)">
+								<button type="button" class="btn btn-primary btn-xs" ng-click="doEditKey($event, key.id)">
+									<span class="glyphicon glyphicon-ok"></span>
+								</button>
+								<button type="button" class="btn btn-primary btn-xs" ng-click="undoEditKey($event, key.id)">
+									<span class="glyphicon glyphicon-remove"></span>
+								</button>
+							</div> -->
 						</li>
 					</ul>
 				</div>
@@ -38,11 +47,11 @@
 				<label class="control-label col-sm-2"></label>
 				<div class="col-sm-10">
 					<p>Per aggiungere una nuova chiave di ricerca, scrivi nel campo sottostante e premi il pulsante +.</p>
-					<p>Puoi aggiungere più chiavi correlate fra loro usando la virgola (,) come separatore:
+					<p>Puoi aggiungere pi&ugrave; chiavi correlate fra loro usando la virgola (,) come separatore:
 					i risultati per i gruppi di chiavi correlate saranno raggruppati.</p>
 				</div>
 			</div>
-			<div class="form-group">
+			<div class="form-group" ng-class="{ 'has-error': keysForm.newKey.$touched && keysForm.newKey.$invalid }">
 				<label class="control-label col-sm-2" for="newKey">Aggiungi chiave di ricerca:</label>
 				<div class="col-sm-9">
 					<input type="text" class="form-control" name="newKey" placeholder="chiave (o chiavi correlate)" ng-model="newKey">
@@ -52,6 +61,9 @@
 						<span class="glyphicon glyphicon-plus"></span>
 					</button>
 				</div>
+				<div class="help-block col-sm-10" ng-messages="keysForm.newKey.$error" ng-if="keysForm.newKey.$invalid">
+        			<p ng-message="duplicate">Hai gi&agrave; inserito questa chiave.</p>
+      			</div>
 			</div>
 		</form>
 		<form class="form-horizontal" role="form" ng-submit="startSearch()">

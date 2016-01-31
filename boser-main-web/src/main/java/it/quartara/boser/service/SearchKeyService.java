@@ -12,6 +12,8 @@ import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +25,10 @@ import it.quartara.boser.model.SearchKey;
 @Stateless
 public class SearchKeyService {
 	
-	private static final Logger log = LoggerFactory.getLogger(SearchService.class);
+	private static final Logger log = LoggerFactory.getLogger(SearchKeyService.class);
 	
 	@PersistenceContext(unitName = "BoserPU")
-	EntityManager em;
-	
-	
+	private EntityManager em;
 
 	@POST
 	public SearchConfig insert(@FormParam("text") String text,
@@ -54,14 +54,37 @@ public class SearchKeyService {
 		Date now = new Date();
 		newKey.setTerms(terms);
 		newKey.setValidityStart(now);
-		em.persist(newKey);
-		keys.add(newKey);
-		searchConfig.setKeys(keys);
-		searchConfig.setLastUpdate(now);
-		em.merge(searchConfig);
+		
+		if (checkDuplicatedTerms(keys, newKey)) {
+			em.persist(newKey);
+			keys.add(newKey);
+			searchConfig.setKeys(keys);
+			searchConfig.setLastUpdate(now);
+			em.merge(searchConfig);
+		} else {
+			/*
+			 * TODO raffinare gestione?
+			 */
+			throw new WebApplicationException(Response.Status.BAD_REQUEST);
+		}
 		return searchConfig;
 	}
-	
+
+	/*
+	 * controlla la presenza di duplicati.
+	 * per ogni chiave di ricerca, se i termini sono uguali a quelli
+	 * della chiave che si sta cercando di inserire, restituisce false.
+	 */
+	private boolean checkDuplicatedTerms(Set<SearchKey> keys, SearchKey newKey) {
+		for (SearchKey searchKey : keys) {
+			Set<String> existingTerms = searchKey.getTerms();
+			if (existingTerms.equals(newKey.getTerms())) {
+				return false;
+			}
+		}						
+		return true;
+	}
+
 	@DELETE
 	@Path("/{id}/searchConfig/{scId}")
 	public SearchConfig delete(@PathParam("scId") Long searchConfigId,
