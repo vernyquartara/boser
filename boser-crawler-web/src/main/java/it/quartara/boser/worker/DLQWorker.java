@@ -41,10 +41,12 @@ public class DLQWorker implements MessageListener {
 		log.debug("message {}", message.toString());
 		try {
 			if (message instanceof MapMessage) {
-				Long searchRequestId = ((MapMessage)message).getLong("searchRequestId");
-				SearchRequest request = em.find(SearchRequest.class, searchRequestId);
-				request.setState(ExecutionState.ERROR);
-				em.merge(request);
+				if (((MapMessage)message).getObject("searchRequestId") instanceof Long) {
+					Long searchRequestId = ((MapMessage)message).getLong("searchRequestId");
+					SearchRequest request = em.find(SearchRequest.class, searchRequestId);
+					request.setState(ExecutionState.ERROR);
+					em.merge(request);
+				}
 			}
 		} catch (JMSException e) {
 			log.error("errore di gestione dead letter queue", e);
