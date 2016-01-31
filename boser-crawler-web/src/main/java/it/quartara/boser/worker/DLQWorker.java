@@ -44,8 +44,12 @@ public class DLQWorker implements MessageListener {
 				if (((MapMessage)message).getObject("searchRequestId") instanceof Long) {
 					Long searchRequestId = ((MapMessage)message).getLong("searchRequestId");
 					SearchRequest request = em.find(SearchRequest.class, searchRequestId);
-					request.setState(ExecutionState.ERROR);
-					em.merge(request);
+					if (request != null) {
+						request.setState(ExecutionState.ERROR);
+						em.merge(request);
+					} else {
+						log.warn("request null per searchRequestId {}", searchRequestId);
+					}
 				}
 			}
 		} catch (JMSException e) {
