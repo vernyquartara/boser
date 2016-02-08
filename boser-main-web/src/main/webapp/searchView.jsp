@@ -16,24 +16,30 @@
 <!-- AVVIO -->
 <div class="row" ng-show="bntNewActive">
 	<div class="col-md-12">
+		<!-- form gestione chiavi -->
 		<form class="form-horizontal" role="form" ng-submit="addNewKey()" name="keysForm">
 			<input type="hidden" name="searchConfigId" ng-value="searchConfigId">
+			<!-- elenco chiavi -->
 			<div class="form-group">
 				<label class="control-label col-sm-2" for="keys">Chiavi di ricerca:</label>
 				<div class="col-sm-9">
 					<span ng-if="keys.length == 0">Nessuna. Aggiungi almeno una chiave per effettuare le ricerche.</span>
 					<ul class="list-group" id="keys" ng-if="keys.length > 0">
 						<li class="list-group-item" ng-repeat="key in keys" ng-click="editKey(key.id, $event)">
-							{{key.terms.join(', ')}}
-							<!-- <div ng-if="editable(key.id)">
-								<input type="text" id="key{{key.id}}" value="{{key.terms.join(', ')}}" ng-keypress="dontSubmit($event)">
-								<button type="button" class="btn btn-primary btn-xs" ng-click="doEditKey($event, key.id)">
+						<!-- un elemento li per ogni chiave. modificabile. -->
+						<ng-form name="updateKeyForm">
+							<span ng-if="!editable(key.id)">{{key.terms.join(', ')}}</span>
+							<div ng-if="editable(key.id)" ng-class="{'alert alert-danger':!updateKeyValid()}">
+								<input type="text" id="key{{key.id}}" name="key" ng-keypress="dontSubmit($event)" value="{{key.terms.join(', ')}}" size="50">
+								<button type="button" class="btn btn-primary btn-xs" ng-click="updateKey(key.id)">
 									<span class="glyphicon glyphicon-ok"></span>
 								</button>
 								<button type="button" class="btn btn-primary btn-xs" ng-click="undoEditKey($event, key.id)">
 									<span class="glyphicon glyphicon-remove"></span>
 								</button>
-							</div> -->
+								<span ng-if="!updateKeyValid()">Chiave non valida o gi&agrave; esistente.</span>
+							</div>
+						</ng-form>
 						</li>
 					</ul>
 				</div>
@@ -43,6 +49,7 @@
 					</button>
 				</div>
 			</div>
+			<!-- testo istruzioni -->
 			<div class="form-group">
 				<label class="control-label col-sm-2"></label>
 				<div class="col-sm-10">
@@ -51,6 +58,7 @@
 					i risultati per i gruppi di chiavi correlate saranno raggruppati.</p>
 				</div>
 			</div>
+			<!-- campo di inserimento nuova chiave -->
 			<div class="form-group" ng-class="{ 'has-error': keysForm.newKey.$touched && keysForm.newKey.$invalid }">
 				<label class="control-label col-sm-2" for="newKey">Aggiungi chiave di ricerca:</label>
 				<div class="col-sm-9">
@@ -66,6 +74,7 @@
       			</div>
 			</div>
 		</form>
+		<!-- form di avvio ricerca -->
 		<form class="form-horizontal" role="form" ng-submit="startSearch()">
 			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10" ng-if="keys.length > 0">

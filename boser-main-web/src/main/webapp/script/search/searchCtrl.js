@@ -54,6 +54,23 @@ angular.module('Boser')
 			}
 		);
 	}
+	$scope.updateKey = function(keyId) {
+		var inputId = 'key'.concat(keyId);
+		var inputVal = document.getElementById(inputId).value;
+		SearchSrv.updateKey(
+				$scope.searchConfigId,
+				keyId,
+				inputVal,
+				function(response){
+					$scope.editableKeys[keyId] = false;
+					$scope.keys = response.keys;
+					updateKeyValidity = true;
+				},
+				function(data, status, headers, config, statusText){
+					updateKeyValidity = false;
+				}
+		);
+	}
 	
 	/*
 	 * ricerca
@@ -88,40 +105,43 @@ angular.module('Boser')
 	$scope.getList();
 	
 	/*
-	 * gestione edit singoli elementi
+	 * gestione edit singole chiavi
 	 */
-	$scope.editableKeys = [];
+	var updateKeyValidity = true;
+	$scope.updateKeyValid = function() {
+		/*
+		 * true o false per indicare se a seguito di un submit la chiave è risultata valida
+		 * o meno (e quindi si deve mostrare il msg di errore).
+		 * è unico e non array perché si edita una sola chiave alla volta (quindi il msg di errore
+		 * su tutte le altri chiavi è attivo ma non visibile)
+		 */
+		return updateKeyValidity; 
+	}
+	$scope.editableKeys = []; //true o false per ogni chiave
 	$scope.editable = function(id) {
 		//resituisce l'editabilità del singolo elemento
 		return $scope.editableKeys[id];
 	};
-	/*
-	 * al momento il problema è che questo scatta sempre, perché 
-	 * l'input è interno a <li> - bisogna trovare il modo di non farlo scattare
-	 */
+
 	$scope.editKey = function(id, $event) {
 		//modifica l'editabilità del singolo elemento
-		console.log("devo modificare: "+id);
-		//$scope.editableKeys[id] = !$scope.editableKeys[id];
+		for (i = 0; i < $scope.editableKeys.length; i++) {
+			$scope.editableKeys[i] = false;
+		}
+		updateKeyValidity = true;
 		$scope.editableKeys[id] = true;
 	};
-	$scope.doEditKey = function($event, id) {
-		var keyCode = $event.which || $event.keyCode;
-		if (keyCode === 13) {
-			console.log("ora modifico id "+id);
-			var inputId = 'key'.concat(id);
-			var inputVal = document.getElementById(inputId).value;
-			console.log("ora modifico value "+inputVal);
-			$scope.editableKeys[id] = false;
-		}
-	};
+	
 	$scope.undoEditKey = function($event, id) {
-//		var inputId = 'key'.concat(id);
-//		var input = document.getElementById(inputId);
-//		input.visibility = hidden;
+		//si stoppa la propagazione perché se no riscatterebbe l'edit key (che è definito sull'elemento padre <li>)
+		updateKeyValidity = true;
 		$scope.editableKeys[id] = false;
+		$event.cancelBubble = true;
+		$event.stopPropagation();
 	};
+	
 	$scope.dontSubmit = function(event) {
+		//soppressione tasto invio per evitare il submit del form
 		var keyCode = event.which || event.keyCode;
 		if (keyCode === 13) {
 			event.preventDefault();

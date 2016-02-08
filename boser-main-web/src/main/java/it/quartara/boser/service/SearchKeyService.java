@@ -10,11 +10,13 @@ import javax.persistence.PersistenceContext;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,22 +42,28 @@ public class SearchKeyService {
 		if (keys==null) {
 			keys = new HashSet<>();
 		}
-		
-		SearchKey newKey = new SearchKey();
+		/*
+		 * bonifica stringa di input
+		 */
 		Set<String> terms = new HashSet<>();
 		if (text.indexOf(",") == -1) {
 			terms.add(text.trim());
 		} else {
-			String[] termsArray = text.split(",");
+			String[] termsArray = StringUtils.removeEnd(StringUtils.removeStart(text, ","), ",")
+								 .trim()
+								 .split(",");
 			for (String term : termsArray) {
 				terms.add(term.trim());
 			}
 		}
-		Date now = new Date();
-		newKey.setTerms(terms);
-		newKey.setValidityStart(now);
-		
-		if (checkDuplicatedTerms(keys, newKey)) {
+		/*
+		 * controllo duplicati
+		 */
+		if (checkDuplicatedTerms(keys, terms)) {
+			SearchKey newKey = new SearchKey();
+			Date now = new Date();
+			newKey.setTerms(terms);
+			newKey.setValidityStart(now);
 			em.persist(newKey);
 			keys.add(newKey);
 			searchConfig.setKeys(keys);
@@ -75,10 +83,10 @@ public class SearchKeyService {
 	 * per ogni chiave di ricerca, se i termini sono uguali a quelli
 	 * della chiave che si sta cercando di inserire, restituisce false.
 	 */
-	private boolean checkDuplicatedTerms(Set<SearchKey> keys, SearchKey newKey) {
+	private boolean checkDuplicatedTerms(Set<SearchKey> keys, Set<String> newKeyTerms) {
 		for (SearchKey searchKey : keys) {
 			Set<String> existingTerms = searchKey.getTerms();
-			if (existingTerms.equals(newKey.getTerms())) {
+			if (existingTerms.equals(newKeyTerms)) {
 				return false;
 			}
 		}						
@@ -99,6 +107,42 @@ public class SearchKeyService {
 		searchConfig.setLastUpdate(now);
 		em.merge(searchConfig);
 		
+		return searchConfig;
+	}
+	
+	@PUT
+	@Path("/{id}/searchConfig/{scId}")
+	public SearchConfig update(@PathParam("scId") Long searchConfigId,
+			   				   @PathParam("id") Long searchKeyId,
+			   				   @FormParam("newValue") String newValue) {
+		if (StringUtils.isEmpty(newValue)) {
+			throw new WebApplicationException(Response.Status.BAD_REQUEST);
+		}
+		/*
+		 * prima controllo se la modifica genera una chiave di ricerca duplicata
+		 */
+		Set<String> terms = new HashSet<>();
+		if (newValue.indexOf(",") == -1) {
+			terms.add(newValue.trim());
+		} else {
+			String[] termsArray = StringUtils.removeEnd(StringUtils.removeStart(newValue, ","), ",")
+								 .trim()
+								 .split(",");
+			for (String term : termsArray) {
+				terms.add(term.trim());
+			}
+		}
+		SearchConfig searchConfig = em.find(SearchConfig.class, searchConfigId);
+		Set<SearchKey> keys = searchConfig.getKeys();
+		SearchKey searchKey = em.find(SearchKey.class, searchKeyId);
+		if (checkDuplicatedTerms(keys, terms)) {
+			searchKey.setTerms(terms);
+			em.merge(searchKey);
+		} else {
+			throw new WebApplicationException(Response.Status.BAD_REQUEST);
+		}
+		
+		em.refresh(searchConfig);
 		return searchConfig;
 	}
 }

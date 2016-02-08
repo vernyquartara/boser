@@ -57,6 +57,22 @@ angular.module('Boser')
 	    	})
 	    	.success(callbackHandler)
 			.error(errorHandler);
+		},
+		updateKey: function(searchConfigId, keyId, newValue, callbackHandler, errorHandler) {
+			$http({
+	    		method: 'PUT',
+	    		url: 'rest/searchKey/'+keyId+'/searchConfig/'+searchConfigId,
+	    		data: {'newValue': newValue},
+	    		headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+	    	    transformRequest: function(obj) {
+	    	        var str = [];
+	    	        for(var p in obj)
+	    	        str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+	    	        return str.join("&");
+	    	    }
+	    	})
+	    	.success(callbackHandler)
+	    	.error(errorHandler);
 		}
 	};
 }]);
