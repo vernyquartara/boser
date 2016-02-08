@@ -143,6 +143,7 @@ public class SearchWorker implements MessageListener {
 		for (SearchKey key : searchConfig.getKeys()) {
 			String queryText = key.getQuery();
 			SolrQuery query = new SolrQuery();
+			query.setFields("url", "title");
 			query.setQuery(queryText);
 			query.setStart(0);
 			query.setRows(Integer.MAX_VALUE);
