@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import it.quartara.boser.action.ActionException;
 import it.quartara.boser.action.handlers.ActionHandler;
 import it.quartara.boser.action.handlers.SearchResultPersisterHandler;
+import it.quartara.boser.action.handlers.XlsResultWriterHandler;
 import it.quartara.boser.model.ExecutionState;
 import it.quartara.boser.model.Parameter;
 import it.quartara.boser.model.Search;
@@ -53,6 +54,7 @@ import it.quartara.boser.model.SearchAction;
 import it.quartara.boser.model.SearchConfig;
 import it.quartara.boser.model.SearchKey;
 import it.quartara.boser.model.SearchRequest;
+import it.quartara.boser.solr.SolrDocumentListWrapper;
 
 @MessageDriven(name = "SearchWorker", activationConfig = {
 	    @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue = "queue/SearchRequestQueue"),
@@ -105,6 +107,7 @@ public class SearchWorker implements MessageListener {
 		search.setConfig(searchConfig);
 		search.setTimestamp(now);
 		em.persist(search);
+		em.flush();
 		Parameter param = em.find(Parameter.class, "SEARCH_REPO");
 		String repo = param.getValue();
 		String searchPath = repo+File.separator+searchConfig.getId()+File.separator+search.getId();
@@ -112,11 +115,18 @@ public class SearchWorker implements MessageListener {
 		if (searchRepo.mkdirs()) {
 			log.debug("creata cartella: {}", searchRepo.getAbsolutePath());
 		}
+		Parameter solrMaxResultsParam = em.find(Parameter.class, "SOLR_QUERY_MAX_RESULT_SIZE");
+		int solrMaxResults = Integer.valueOf(solrMaxResultsParam.getValue());
 		/*
 		 * creazione catena di handlers per la gestione dei risultati di ricerca
 		 */
 		Parameter solrUrlParam = em.find(Parameter.class, "SOLR_URL");
 		HttpSolrServer solr = new HttpSolrServer(solrUrlParam.getValue());
+		
+		/*
+		 * la creazione della catena di handlers è stata dismessa poiché le action non possono
+		 * essere configurabili dinamicamente. commentato per memoria.
+		 * 
 		ActionHandler handlers = null;
 		try {
 			handlers = createHandlerChain(searchConfig.getActions(), em, searchRepo);
@@ -136,38 +146,71 @@ public class SearchWorker implements MessageListener {
 				throw new EJBException("impossibile effettuare commit della transazione", e1);
 			}
 		}
+		*/
+		SearchResultPersisterHandler srph = new SearchResultPersisterHandler(em, searchRepo);
+		XlsResultWriterHandler xrwh = new XlsResultWriterHandler(em, searchRepo);
 		/*
 		 * per ogni chiave si effettua una ricerca su solr
 		 * e si passano i risultati alla catena di handlers per l'elaborazione
 		 */
 		for (SearchKey key : searchConfig.getKeys()) {
 			String queryText = key.getQuery();
-			SolrQuery query = new SolrQuery();
-			query.setQuery(queryText);
-			query.setStart(0);
-			query.setRows(Integer.MAX_VALUE);
-			QueryResponse queryResponse = null;
-			try {
-				log.debug("esecuzione ricerca su Sorl, query: "+queryText);
-				queryResponse = solr.query(query);
-			} catch (SolrServerException e) {
-				log.error("errore durante l'esecuzione della ricerca su Solr",e);
-				request.setLastUpdate(now);
-				request.setState(ExecutionState.ERROR);
-				em.merge(request);
+			/*
+			 * per motivi di buffering si suddividono le ricerche su solr in lotti da "solrMaxResults"
+			 * utile specialmente in caso di prima ricerca
+			 */
+			for (int i = 0; i < Integer.MAX_VALUE; i+=solrMaxResults) {
+				SolrQuery query = new SolrQuery();
+				query.setFields("url", "title");
+				query.setQuery(queryText);
+				query.setStart(i);
+				query.setRows(solrMaxResults);
+				QueryResponse queryResponse = null;
 				try {
-					tx.commit();
-					return;
-				} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
-						| HeuristicRollbackException | SystemException e1) {
-					throw new EJBException("impossibile effettuare commit della transazione", e1);
+					log.debug("esecuzione ricerca su Sorl, query: "+queryText);
+					queryResponse = solr.query(query);
+				} catch (SolrServerException e) {
+					log.error("errore durante l'esecuzione della ricerca su Solr",e);
+					request.setLastUpdate(now);
+					request.setState(ExecutionState.ERROR);
+					em.merge(request);
+					try {
+						tx.commit();
+						return;
+					} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+							| HeuristicRollbackException | SystemException e1) {
+						throw new EJBException("impossibile effettuare commit della transazione", e1);
+					}
 				}
+				SolrDocumentList docList = queryResponse.getResults();
+				log.debug("Solr restituisce {} risultati", docList.size());
+				if (docList.size()==0) {
+					break;
+				}
+				SolrDocumentListWrapper docListWrapper = new SolrDocumentListWrapper(docList);
+				if (i==0) docListWrapper.setAppend(Boolean.FALSE);
+				try {
+					log.debug("avvio persistenza risultati");
+					srph.handle(search, key, docListWrapper);
+					//handlers.handle(search, key, docListWrapper);
+				} catch (ActionException e) {
+					StringBuilder buffer = new StringBuilder();
+					buffer.append("Si è verificato un errore durante l'esecuzione delle action ");
+					buffer.append("per la chiave di ricerca "+queryText);
+					log.error(buffer.toString(), e);
+					//continue; // or not continue???
+					/*
+					 * TODO impostare stato ERRORE per la ricerca??
+					 * quali errori potrebbero verificarsi?
+					 */
+				}
+				
 			}
-			SolrDocumentList docList = queryResponse.getResults();
-			log.debug("Solr restituisce {} risultati", docList.size());
+			/*
+			 * output su file
+			 */
 			try {
-				log.debug("avvio gestione actions");
-				handlers.handle(search, key, docList);
+				xrwh.handle(search, key, null);
 			} catch (ActionException e) {
 				StringBuilder buffer = new StringBuilder();
 				buffer.append("Si è verificato un errore durante l'esecuzione delle action ");
@@ -180,6 +223,10 @@ public class SearchWorker implements MessageListener {
 				 */
 			}
 		}
+		
+		
+		
+		
 		/*
 		 * TODO creazione del file zip con i risultati.
 		 */
@@ -209,6 +256,11 @@ public class SearchWorker implements MessageListener {
 			tx.commit();
 		} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
 				| HeuristicRollbackException | SystemException e) {
+			try {
+				tx.rollback();
+			} catch (Exception e1) {
+				log.error("impossibile effettuare rollback della transazione!!!", e1);
+			}
 			throw new EJBException("impossibile effettuare commit della transazione", e);
 		}
 	}

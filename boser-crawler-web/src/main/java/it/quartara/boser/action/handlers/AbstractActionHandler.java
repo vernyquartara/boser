@@ -9,6 +9,7 @@ import org.apache.solr.common.SolrDocumentList;
 import it.quartara.boser.action.ActionException;
 import it.quartara.boser.model.Search;
 import it.quartara.boser.model.SearchKey;
+import it.quartara.boser.solr.SolrDocumentListWrapper;
 
 abstract public class AbstractActionHandler implements ActionHandler {
 	
@@ -33,14 +34,14 @@ abstract public class AbstractActionHandler implements ActionHandler {
 	}
 	
 	@Override
-	public void handle(Search search, SearchKey key, SolrDocumentList documents) throws ActionException {
+	public void handle(Search search, SearchKey key, SolrDocumentListWrapper documents) throws ActionException {
 		this.execute(search, key, documents);
 		if (nextHandler != null) {
 			nextHandler.handle(search, key, documents);
 		}
 	}
 	
-	abstract protected void execute(Search search, SearchKey key, SolrDocumentList documents) throws ActionException;
+	abstract protected void execute(Search search, SearchKey key, SolrDocumentListWrapper documents) throws ActionException;
 
 	@Override
 	public void setNextHandler(ActionHandler nextHandler) {

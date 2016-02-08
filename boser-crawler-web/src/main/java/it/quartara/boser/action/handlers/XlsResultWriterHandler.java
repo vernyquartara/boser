@@ -10,8 +10,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
@@ -34,6 +36,9 @@ import org.slf4j.LoggerFactory;
 import it.quartara.boser.action.ActionException;
 import it.quartara.boser.model.Search;
 import it.quartara.boser.model.SearchKey;
+import it.quartara.boser.model.SearchResult;
+import it.quartara.boser.model.SearchResultState;
+import it.quartara.boser.solr.SolrDocumentListWrapper;
 
 /**
  * Scrive i risultati di ricerca in formato Excel.
@@ -58,13 +63,14 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	}
 
 	@Override
-	protected void execute(Search search, SearchKey key, SolrDocumentList documents) throws ActionException {
+	protected void execute(Search search, SearchKey key, SolrDocumentListWrapper documents) throws ActionException {
 		String headless = System.getProperty(JAVA_AWT_HEADLESS);
 		System.setProperty(JAVA_AWT_HEADLESS, "true");
 		File outputFile = new File(searchRepo.getAbsolutePath()+File.separator
 									+"RES-"+getSearchResultFileNameSubstringByKey(key)
 									+"-K"+key.getId()
 									+".xls");
+		log.debug("will write xls file: {}", outputFile);
 		FileOutputStream fileOut = null;
 	    try {
 			fileOut = new FileOutputStream(outputFile);
@@ -107,10 +113,24 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    CellStyle linkStyle = wb.createCellStyle();
 	    linkStyle.setFont(linkFont);
 	    
+	    log.debug("executing: from SearchResult where search.id={} and state={}",search.getId(), SearchResultState.INSERTED);
+	    List<SearchResult> docList = null;
+	    try {
+	    	TypedQuery<SearchResult> query = em.createQuery("from SearchResult sr where sr.search.id=:searchId and sr.state=:stateId",
+	    												SearchResult.class);
+	    	query.setParameter("searchId", search.getId());
+	    	query.setParameter("stateId", SearchResultState.INSERTED);
+	    	docList = query.getResultList();
+	    	log.debug("tot. results: {}", docList.size());
+	    } catch (Exception e) {
+	    	log.error("eccezione imprevista", e);
+	    }
+	    
 	    Sheet sheet = wb.createSheet("Foglio1");
 	    createHeader(sheet, headerStyle);
 	    int rowCounter = 1;
-		for (SolrDocument doc : documents) {
+		//for (SolrDocument doc : documents) {
+	    for (SearchResult doc : docList) {
 			Row row = sheet.createRow(rowCounter++);
 			row.setHeightInPoints(30);
 			for (int i = 0; i < 8; i++) {
@@ -119,7 +139,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 		    	cell.setCellValue("");
 		    }
 			Hyperlink link = createHelper.createHyperlink(Hyperlink.LINK_URL);
-			String url = (String)doc.getFieldValue(URL.toString());
+			String url = (String)doc.getUrl();
 			link.setAddress(url);
 			
 		    Cell cell0 = row.getCell(0);
@@ -127,7 +147,8 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 		    cell0.setCellValue(getLinkLabel(url));
 		    
 		    Cell cell3 = row.getCell(3);
-		    cell3.setCellValue((String)doc.getFieldValue(TITLE.toString()));
+		    cell3.setCellValue((String)doc.getTitle());
+		    doc.setState(SearchResultState.RETRIEVED);
 		}
 		sheet.autoSizeColumn(0);
 		sheet.autoSizeColumn(1);

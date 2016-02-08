@@ -1,6 +1,8 @@
 package it.quartara.boser.model;
 
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.ManyToOne;
@@ -18,6 +20,8 @@ public class SearchResult {
 	private SearchKey key;
 	@Id
 	private String title;
+	@Enumerated(EnumType.STRING)
+	private SearchResultState state;
 	
 	@ManyToOne
 	private Search search;
@@ -45,6 +49,12 @@ public class SearchResult {
 	}
 	public void setSearch(Search search) {
 		this.search = search;
+	}
+	public SearchResultState getState() {
+		return state;
+	}
+	public void setState(SearchResultState state) {
+		this.state = state;
 	}
 	@Override
 	public int hashCode() {
@@ -90,5 +100,6 @@ public class SearchResult {
 		}
 		return true;
 	}
+	
 	
 }

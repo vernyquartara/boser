@@ -1,5 +1,7 @@
 package it.quartara.boser.worker;
 
+import java.util.Date;
+
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.ejb.TransactionManagement;
@@ -41,10 +43,12 @@ public class DLQWorker implements MessageListener {
 		log.debug("message {}", message.toString());
 		try {
 			if (message instanceof MapMessage) {
-				if (((MapMessage)message).getObject("searchRequestId") instanceof Long) {
-					Long searchRequestId = ((MapMessage)message).getLong("searchRequestId");
+				Object value = ((MapMessage)message).getObject("searchRequestId"); 
+				if (value != null && value instanceof Long) {
+					Long searchRequestId = (Long) value;
 					SearchRequest request = em.find(SearchRequest.class, searchRequestId);
 					if (request != null) {
+						request.setLastUpdate(new Date());
 						request.setState(ExecutionState.ERROR);
 						em.merge(request);
 					} else {

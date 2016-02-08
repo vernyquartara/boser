@@ -7,12 +7,12 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 @Entity
-@Inheritance
-@DiscriminatorColumn(name="REQ_TYPE")
-//@ForceDiscriminator
+@Inheritance(strategy=InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name="REQ_TYPE",length=1)
 @Table(name="ASYNC_REQUESTS")
 public abstract class AsyncRequest extends PersistentEntity {
 

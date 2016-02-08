@@ -7,7 +7,6 @@ import java.io.PrintWriter;
 import javax.persistence.EntityManager;
 
 import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +14,7 @@ import it.quartara.boser.action.ActionException;
 import it.quartara.boser.model.IndexField;
 import it.quartara.boser.model.Search;
 import it.quartara.boser.model.SearchKey;
+import it.quartara.boser.solr.SolrDocumentListWrapper;
 
 /**
  * Scrive su file i risultati di ricerca.
@@ -35,7 +35,7 @@ public class TxtResultWriterHandler extends AbstractActionHandler {
 	}
 
 	@Override
-	protected void execute(Search search, SearchKey key, SolrDocumentList documents) throws ActionException {
+	protected void execute(Search search, SearchKey key, SolrDocumentListWrapper documents) throws ActionException {
 		File outputFile = new File(searchRepo.getAbsolutePath()+File.separator
 									+"RES-"+getSearchResultFileNameSubstringByKey(key)
 									+"-K"+key.getId()
@@ -44,9 +44,9 @@ public class TxtResultWriterHandler extends AbstractActionHandler {
 			PrintWriter writer = new PrintWriter(outputFile);
 			writer.println(FILE_HEADER);
 			writer.println(TITLE);
-			writer.println(documents.size()+" risultati per "+key.getQuery()+"\r\n");
-			for (int i = 0; i < documents.size(); i++) {
-				SolrDocument doc = documents.get(i);
+			writer.println(documents.getList().size()+" risultati per "+key.getQuery()+"\r\n");
+			for (int i = 0; i < documents.getList().size(); i++) {
+				SolrDocument doc = documents.getList().get(i);
 				writer.println(i+1+")"+doc.getFieldValue(IndexField.URL.toString()));
 				writer.println(doc.getFieldValue(IndexField.TITLE.toString())+"\r\n");
 			}

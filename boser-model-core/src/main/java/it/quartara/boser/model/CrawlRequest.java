@@ -10,7 +10,7 @@ public class CrawlRequest extends AsyncRequest {
 	
 	private static final long serialVersionUID = -7256088880635332385L;
 	
-	@ManyToOne(optional=false)
+	@ManyToOne(optional=true)
 	private IndexConfig indexConfig;
 	@ManyToOne(optional=true)
 	private Index index;
