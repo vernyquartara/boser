@@ -1,5 +1,6 @@
 package it.quartara.boser.model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -13,7 +14,13 @@ import javax.persistence.Table;
 @IdClass(SearchResultPK.class)
 public class SearchResult {
 	
+	/*
+	 * si aggiunge la definizione della collation poiché di default
+	 * utf-8 è case insensitive, ma le URL vanno trattate come
+	 * case sensitive secondo le raccomandazioni w3c
+	 */
 	@Id
+	@Column(columnDefinition = "VARCHAR(255) COLLATE latin1_general_cs")
 	private String url;
 	@Id
 	@ManyToOne
@@ -101,5 +108,8 @@ public class SearchResult {
 		return true;
 	}
 	
-	
+	@Override
+	public String toString() {
+		return "SearchResult [url=" + url + ", title=" + title + ", key=" + key +"]";
+	}
 }

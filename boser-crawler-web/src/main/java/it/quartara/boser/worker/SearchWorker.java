@@ -91,6 +91,7 @@ public class SearchWorker implements MessageListener {
 		 */
 		UserTransaction tx = context.getUserTransaction();
 		try {
+			tx.setTransactionTimeout(3600); //http://stackoverflow.com/questions/28096898/usertransaction-settransactiontimeout-not-working
 			tx.begin();
 		} catch (NotSupportedException | SystemException e) {
 			throw new EJBException("impossibile avviare la transazione", e);
@@ -159,7 +160,7 @@ public class SearchWorker implements MessageListener {
 			 * per motivi di buffering si suddividono le ricerche su solr in lotti da "solrMaxResults"
 			 * utile specialmente in caso di prima ricerca
 			 */
-			for (int i = 0; i < Integer.MAX_VALUE; i+=solrMaxResults) {
+			for (int i = 0; i < Integer.MAX_VALUE; i += solrMaxResults) {
 				SolrQuery query = new SolrQuery();
 				query.setFields("url", "title");
 				query.setQuery(queryText);
@@ -167,7 +168,7 @@ public class SearchWorker implements MessageListener {
 				query.setRows(solrMaxResults);
 				QueryResponse queryResponse = null;
 				try {
-					log.debug("esecuzione ricerca su Sorl, query: "+queryText);
+					log.debug("esecuzione ricerca su Sorl, query: {}, start: {}", queryText, i);
 					queryResponse = solr.query(query);
 				} catch (SolrServerException e) {
 					log.error("errore durante l'esecuzione della ricerca su Solr",e);
@@ -228,14 +229,14 @@ public class SearchWorker implements MessageListener {
 		
 		
 		/*
-		 * TODO creazione del file zip con i risultati.
+		 * creazione del file zip con i risultati.
 		 */
 		File zipFile = null;
 		try {
 			zipFile = createZipFile(searchPath, now);
 		} catch (IOException e) {
 			log.error("errore durante la creazione del file zip", e);
-			request.setLastUpdate(now);
+			request.setLastUpdate(new Date());
 			request.setState(ExecutionState.ERROR);
 			em.merge(request);
 			try {
@@ -249,7 +250,7 @@ public class SearchWorker implements MessageListener {
 		search.setZipFilePath(zipFile.getAbsolutePath());
 		em.merge(search);
 		request.setSearch(search);
-		request.setLastUpdate(now);
+		request.setLastUpdate(new Date());
 		request.setState(ExecutionState.COMPLETED);
 		em.merge(request);
 		try {

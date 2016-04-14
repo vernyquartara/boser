@@ -4,18 +4,12 @@ import static it.quartara.boser.model.IndexField.TITLE;
 import static it.quartara.boser.model.IndexField.URL;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.persistence.EntityManager;
 
-import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +46,7 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 				title = "";
 			}
 			SearchResultPK pk = new SearchResultPK(url, key.getId(), title);
-			log.debug("search result pk: {}", pk);
+			log.trace("search result pk: {}", pk);
 			SearchResult searchResult = em.find(SearchResult.class, pk);
 			if (searchResult==null) {
 				searchResult = new SearchResult();
@@ -63,12 +57,13 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 				searchResult.setState(SearchResultState.INSERTED);
 				em.persist(searchResult);
 			} else {
-				log.warn("DUPLICATO: {}", pk);
+				log.debug("DUPLICATO: {}", pk);
 				duplicatedMap.put(searchResult, doc);
 				em.detach(searchResult);
 			}
 		}
 		em.flush();
+		
 		/*
 		 * gestione dei duplicati da rivedere
 		 * ogni volta scrive 100 risultati ma deve APPENDERE realmente non ricominciare ogni 100
@@ -109,5 +104,5 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 		}
 		*/
 	}
-
+	
 }
