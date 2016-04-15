@@ -89,9 +89,11 @@ public class SearchWorker implements MessageListener {
 		/*
 		 * avvio transazione gestita a mano
 		 */
+		Parameter timeoutParam = em.find(Parameter.class, "TRANSACTION_TIMEOUT");
+		int timeout = Integer.valueOf(timeoutParam.getValue());
 		UserTransaction tx = context.getUserTransaction();
 		try {
-			tx.setTransactionTimeout(3600); //http://stackoverflow.com/questions/28096898/usertransaction-settransactiontimeout-not-working
+			tx.setTransactionTimeout(timeout); //http://stackoverflow.com/questions/28096898/usertransaction-settransactiontimeout-not-working
 			tx.begin();
 		} catch (NotSupportedException | SystemException e) {
 			throw new EJBException("impossibile avviare la transazione", e);
@@ -116,49 +118,24 @@ public class SearchWorker implements MessageListener {
 		if (searchRepo.mkdirs()) {
 			log.debug("creata cartella: {}", searchRepo.getAbsolutePath());
 		}
-		Parameter solrMaxResultsParam = em.find(Parameter.class, "SOLR_QUERY_MAX_RESULT_SIZE");
-		int solrMaxResults = Integer.valueOf(solrMaxResultsParam.getValue());
 		/*
-		 * creazione catena di handlers per la gestione dei risultati di ricerca
+		 * creazione servizi
 		 */
-		Parameter solrUrlParam = em.find(Parameter.class, "SOLR_URL");
-		HttpSolrServer solr = new HttpSolrServer(solrUrlParam.getValue());
-		
-		/*
-		 * la creazione della catena di handlers è stata dismessa poiché le action non possono
-		 * essere configurabili dinamicamente. commentato per memoria.
-		 * 
-		ActionHandler handlers = null;
-		try {
-			handlers = createHandlerChain(searchConfig.getActions(), em, searchRepo);
-		} catch (ClassNotFoundException | NoSuchMethodException
-				| SecurityException | InstantiationException
-				| IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException e) {
-			log.error("errore durante la creazione della catena di handlers", e);
-			request.setLastUpdate(now);
-			request.setState(ExecutionState.ERROR);
-			em.merge(request);
-			try {
-				tx.commit();
-				return;
-			} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
-					| HeuristicRollbackException | SystemException e1) {
-				throw new EJBException("impossibile effettuare commit della transazione", e1);
-			}
-		}
-		*/
 		SearchResultPersisterHandler srph = new SearchResultPersisterHandler(em, searchRepo);
 		XlsResultWriterHandler xrwh = new XlsResultWriterHandler(em, searchRepo);
 		/*
 		 * per ogni chiave si effettua una ricerca su solr
 		 * e si passano i risultati alla catena di handlers per l'elaborazione
 		 */
+		Parameter solrMaxResultsParam = em.find(Parameter.class, "SOLR_QUERY_MAX_RESULT_SIZE");
+		int solrMaxResults = Integer.valueOf(solrMaxResultsParam.getValue());
+		Parameter solrUrlParam = em.find(Parameter.class, "SOLR_URL");
+		HttpSolrServer solr = new HttpSolrServer(solrUrlParam.getValue());
 		for (SearchKey key : searchConfig.getKeys()) {
 			String queryText = key.getQuery();
 			/*
 			 * per motivi di buffering si suddividono le ricerche su solr in lotti da "solrMaxResults"
-			 * utile specialmente in caso di prima ricerca
+			 * utile specialmente in caso di prima ricerca quando lo storico è vuoto
 			 */
 			for (int i = 0; i < Integer.MAX_VALUE; i += solrMaxResults) {
 				SolrQuery query = new SolrQuery();
@@ -193,7 +170,6 @@ public class SearchWorker implements MessageListener {
 				try {
 					log.debug("avvio persistenza risultati");
 					srph.handle(search, key, docListWrapper);
-					//handlers.handle(search, key, docListWrapper);
 				} catch (ActionException e) {
 					StringBuilder buffer = new StringBuilder();
 					buffer.append("Si è verificato un errore durante l'esecuzione delle action ");
@@ -223,6 +199,10 @@ public class SearchWorker implements MessageListener {
 				 * quali errori potrebbero verificarsi?
 				 */
 			}
+			/*
+			 * output dei duplicati su file
+			 */
+			
 		}
 		
 		
