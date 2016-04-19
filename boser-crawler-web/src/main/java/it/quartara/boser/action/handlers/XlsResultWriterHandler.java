@@ -58,6 +58,8 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	
 	private static final Logger log = LoggerFactory.getLogger(XlsResultWriterHandler.class);
 
+	private static final int COL_NUM = 7;
+
 	public XlsResultWriterHandler(EntityManager em, File searchRepo) {
 		super(em, searchRepo);
 	}
@@ -109,7 +111,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    
 	    Font linkFont = wb.createFont();
 	    linkFont.setUnderline(Font.U_SINGLE);
-	    linkFont.setColor(IndexedColors.BLUE.getIndex());
+	    linkFont.setColor(IndexedColors.LIGHT_BLUE.getIndex());
 	    CellStyle linkStyle = wb.createCellStyle();
 	    linkStyle.setFont(linkFont);
 	    
@@ -133,7 +135,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    for (SearchResult doc : docList) {
 			Row row = sheet.createRow(rowCounter++);
 			row.setHeightInPoints(30);
-			for (int i = 0; i < 8; i++) {
+			for (int i = 0; i < COL_NUM; i++) {
 		    	Cell cell = row.createCell(i, CELL_TYPE_STRING);
 		    	cell.setCellStyle(defaultCellStyle);
 		    	cell.setCellValue("");
@@ -151,13 +153,12 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 		    doc.setState(SearchResultState.RETRIEVED);
 		}
 		sheet.autoSizeColumn(0);
-		sheet.autoSizeColumn(1);
-		sheet.autoSizeColumn(2);
+		sheet.setColumnWidth(1, 2007);
+		sheet.setColumnWidth(2, 2755);
 		sheet.autoSizeColumn(3);
-		sheet.autoSizeColumn(4);
-		sheet.autoSizeColumn(5);
-		sheet.autoSizeColumn(6);
-		sheet.autoSizeColumn(7);
+		sheet.setColumnWidth(4, 3651);
+		sheet.setColumnWidth(5, 3838);
+		sheet.setColumnWidth(6, 3191);
 		try {
 			wb.write(fileOut);
 			fileOut.close();
@@ -189,7 +190,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	private void createHeader(Sheet sheet, CellStyle style) {
 		Row row = sheet.createRow(0);
 		row.setHeightInPoints(25);
-		String[] headers = {"Testata", "Tipo", "Data", "Titolo", "Argomento", "Modello", "Autore", "Foto col" };
+		String[] headers = {"Testata", "Tipo", "Data", "Titolo", "Argomento", "Modello", "Autore"};
 		for (int i = 0; i < headers.length; i++) {
 			Cell cell = row.createCell(i);
 			cell.setCellStyle(style);
