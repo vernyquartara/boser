@@ -20,12 +20,13 @@ public class SearchResult {
 	 * case sensitive secondo le raccomandazioni w3c
 	 */
 	@Id
-	@Column(columnDefinition = "VARCHAR(255) COLLATE latin1_general_cs")
+	@Column(columnDefinition = "VARCHAR(492) COLLATE latin1_general_cs")
 	private String url;
 	@Id
 	@ManyToOne
 	private SearchKey key;
 	@Id
+	@Column(columnDefinition = "VARCHAR(255) COLLATE latin1_general_cs")
 	private String title;
 	@Enumerated(EnumType.STRING)
 	private SearchResultState state;
