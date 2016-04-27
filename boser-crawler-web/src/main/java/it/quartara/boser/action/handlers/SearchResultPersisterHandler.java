@@ -4,7 +4,6 @@ import static it.quartara.boser.model.IndexField.TITLE;
 import static it.quartara.boser.model.IndexField.URL;
 
 import java.io.File;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,8 +30,6 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 	
 	private static final Logger log = LoggerFactory.getLogger(SearchResultPersisterHandler.class);
 	
-	private static final String FILE_TITLE = "DUPLICATI DELLA RICERCA\r\n";
-
 	public SearchResultPersisterHandler(EntityManager em, File searchRepo) {
 		super(em, searchRepo);
 	}
@@ -41,12 +38,11 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 	protected void execute(Search search, SearchKey key, SolrDocumentListWrapper documents) throws ActionException {
 		Map<SearchResult, SolrDocument> duplicatedMap = new HashMap<SearchResult, SolrDocument>();
 		for (SolrDocument doc : documents.getList()) {
-			String url = new String(((String) doc.getFieldValue(URL.toString())).getBytes(), Charset.forName("ISO-8859-1"));
+			String url = (String) doc.getFieldValue(URL.toString());
 			String title = (String) doc.getFieldValue(TITLE.toString());
 			if (title==null) {
 				title = "";
 			}
-			title = new String(title.getBytes(), Charset.forName("ISO-8859-1"));
 			SearchResultPK pk = new SearchResultPK(url, key.getId(), title);
 			log.trace("search result pk: {}", pk);
 			SearchResult searchResult = em.find(SearchResult.class, pk);
