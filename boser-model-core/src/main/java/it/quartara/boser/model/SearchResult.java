@@ -1,34 +1,35 @@
 package it.quartara.boser.model;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import it.quartara.boser.model.converter.SearchResultStateConverter;
+
 @Entity
 @Table(name="SEARCH_RESULTS")
 @IdClass(SearchResultPK.class)
 public class SearchResult {
-	
-	/*
-	 * si aggiunge la definizione della collation poiché di default
-	 * utf-8 è case insensitive, ma le URL vanno trattate come
-	 * case sensitive secondo le raccomandazioni w3c
-	 */
 	@Id
-	@Column(columnDefinition = "VARCHAR(492) COLLATE latin1_general_cs")
-	private String url;
+	@Column(columnDefinition = "CHAR(32)")
+	private String digest;
+	
 	@Id
 	@ManyToOne
 	private SearchKey key;
-	@Id
-	@Column(columnDefinition = "VARCHAR(255) COLLATE latin1_general_cs")
+	
+	@Column(columnDefinition = "VARCHAR(492)")
+	private String url;
+	
+	@Column(columnDefinition = "VARCHAR(255)")
 	private String title;
-	@Enumerated(EnumType.STRING)
+	
+	@Column(columnDefinition = "CHAR(1)")
+	@Convert(converter = SearchResultStateConverter.class)
 	private SearchResultState state;
 	
 	@ManyToOne
@@ -112,5 +113,11 @@ public class SearchResult {
 	@Override
 	public String toString() {
 		return "SearchResult [url=" + url + ", title=" + title + ", key=" + key +"]";
+	}
+	public String getDigest() {
+		return digest;
+	}
+	public void setDigest(String digest) {
+		this.digest = digest;
 	}
 }

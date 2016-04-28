@@ -4,7 +4,8 @@ public enum IndexField {
 
 	URL,
 	TITLE,
-	CONTENT;
+	CONTENT,
+	DIGEST;
 
 	@Override
 	public String toString() {

@@ -1,7 +1,5 @@
 package it.quartara.boser.action.handlers;
 
-import static it.quartara.boser.model.IndexField.TITLE;
-import static it.quartara.boser.model.IndexField.URL;
 import static org.apache.poi.ss.usermodel.Cell.CELL_TYPE_STRING;
 
 import java.io.File;
@@ -28,8 +26,6 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,8 +108,16 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    Font linkFont = wb.createFont();
 	    linkFont.setUnderline(Font.U_SINGLE);
 	    linkFont.setColor(IndexedColors.LIGHT_BLUE.getIndex());
+	    linkFont.setFontHeightInPoints((short)8);
+	    linkFont.setFontName("Arial");
 	    CellStyle linkStyle = wb.createCellStyle();
 	    linkStyle.setFont(linkFont);
+	    linkStyle.setBorderBottom(CellStyle.BORDER_THIN);
+	    linkStyle.setBorderLeft(CellStyle.BORDER_THIN);
+	    linkStyle.setBorderTop(CellStyle.BORDER_THIN);
+	    linkStyle.setBorderRight(CellStyle.BORDER_THIN);
+	    linkStyle.setAlignment(CellStyle.ALIGN_CENTER);
+	    linkStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
 	    
 	    log.debug("executing: from SearchResult where search.id={} and state={}",search.getId(), SearchResultState.INSERTED);
 	    List<SearchResult> docList = null;
@@ -131,7 +135,6 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    Sheet sheet = wb.createSheet("Foglio1");
 	    createHeader(sheet, headerStyle);
 	    int rowCounter = 1;
-		//for (SolrDocument doc : documents) {
 	    for (SearchResult doc : docList) {
 			Row row = sheet.createRow(rowCounter++);
 			row.setHeightInPoints(30);
@@ -147,6 +150,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 		    Cell cell0 = row.getCell(0);
 		    cell0.setHyperlink(link);
 		    cell0.setCellValue(getLinkLabel(url));
+		    cell0.setCellStyle(linkStyle);
 		    
 		    Cell cell3 = row.getCell(3);
 		    cell3.setCellValue((String)doc.getTitle());

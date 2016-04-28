@@ -139,7 +139,7 @@ public class SearchWorker implements MessageListener {
 			 */
 			for (int i = 0; i < Integer.MAX_VALUE; i += solrMaxResults) {
 				SolrQuery query = new SolrQuery();
-				query.setFields("url", "title");
+				query.setFields("url", "title", "digest");
 				query.setQuery(queryText);
 				query.setStart(i);
 				query.setRows(solrMaxResults);

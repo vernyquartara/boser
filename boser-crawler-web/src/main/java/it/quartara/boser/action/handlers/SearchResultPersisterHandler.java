@@ -1,11 +1,10 @@
 package it.quartara.boser.action.handlers;
 
+import static it.quartara.boser.model.IndexField.DIGEST;
 import static it.quartara.boser.model.IndexField.TITLE;
 import static it.quartara.boser.model.IndexField.URL;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.persistence.EntityManager;
 
@@ -36,19 +35,22 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 
 	@Override
 	protected void execute(Search search, SearchKey key, SolrDocumentListWrapper documents) throws ActionException {
-		Map<SearchResult, SolrDocument> duplicatedMap = new HashMap<SearchResult, SolrDocument>();
+		//Map<SearchResult, SolrDocument> duplicatedMap = new HashMap<SearchResult, SolrDocument>();
 		for (SolrDocument doc : documents.getList()) {
+			String digest = (String) doc.getFieldValue(DIGEST.toString());
 			String url = (String) doc.getFieldValue(URL.toString());
 			String title = (String) doc.getFieldValue(TITLE.toString());
 			if (title==null) {
 				title = "";
 			}
-			SearchResultPK pk = new SearchResultPK(url, key.getId(), title);
+			SearchResultPK pk = new SearchResultPK(key.getId(), digest);
+			
 			log.trace("search result pk: {}", pk);
 			SearchResult searchResult = em.find(SearchResult.class, pk);
 			if (searchResult==null) {
 				searchResult = new SearchResult();
 				searchResult.setSearch(search);
+				searchResult.setDigest(digest);
 				searchResult.setKey(key);
 				searchResult.setUrl(url);
 				searchResult.setTitle(title);
@@ -56,7 +58,7 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 				em.persist(searchResult);
 			} else {
 				log.debug("DUPLICATO: {}", pk);
-				duplicatedMap.put(searchResult, doc);
+				//duplicatedMap.put(searchResult, doc);
 				em.detach(searchResult);
 			}
 		}
