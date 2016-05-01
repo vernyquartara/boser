@@ -107,7 +107,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    
 	    Font linkFont = wb.createFont();
 	    linkFont.setUnderline(Font.U_SINGLE);
-	    linkFont.setColor(IndexedColors.LIGHT_BLUE.getIndex());
+	    linkFont.setColor(IndexedColors.DARK_BLUE.getIndex());
 	    linkFont.setFontHeightInPoints((short)8);
 	    linkFont.setFontName("Arial");
 	    CellStyle linkStyle = wb.createCellStyle();

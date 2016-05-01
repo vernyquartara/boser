@@ -82,7 +82,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr ng-repeat="req in requests | orderBy:req.lastUpdate:desc">
+				<tr ng-repeat="req in requests | orderBy:'id':true">
 					<td>{{req.id}}</td><!-- index -->
 					<td>{{req.state}}</td><!-- index -->
 					<td>{{req.creationDate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- index -->

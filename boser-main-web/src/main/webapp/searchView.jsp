@@ -102,7 +102,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr ng-repeat="req in requests | orderBy:search.timestamp:desc">
+				<tr ng-repeat="req in requests | orderBy:'id':true">
 					<td>{{req.id}}</td><!-- request -->
 					<td>{{req.state}}</td><!-- request -->
 					<td>{{req.creationDate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- request -->
