@@ -136,6 +136,22 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    createHeader(sheet, headerStyle);
 	    int rowCounter = 1;
 	    for (SearchResult doc : docList) {
+	    	if (rowCounter == 65535) {
+	    		sheet.autoSizeColumn(0);
+	    		sheet.setColumnWidth(1, 2007);
+	    		sheet.setColumnWidth(2, 2755);
+	    		sheet.autoSizeColumn(3);
+	    		sheet.setColumnWidth(4, 3651);
+	    		sheet.setColumnWidth(5, 3838);
+	    		sheet.setColumnWidth(6, 3191);
+	    		/*
+	    		 * si crea un nuovo foglio al raggiungimento dei 65536 risultati
+	    		 * non si prevede che si necessario un terzo foglio
+	    		 */
+	    		sheet = wb.createSheet("Foglio2");
+	    		createHeader(sheet, headerStyle);
+	    		rowCounter = 1;
+	    	}
 			Row row = sheet.createRow(rowCounter++);
 			row.setHeightInPoints(30);
 			for (int i = 0; i < COL_NUM; i++) {
