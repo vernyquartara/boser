@@ -160,7 +160,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 		    	cell.setCellValue("");
 		    }
 			Hyperlink link = createHelper.createHyperlink(Hyperlink.LINK_URL);
-			String url = (String)doc.getUrl();
+			String url = (String)doc.getSolrSearchResult().getUrl();
 			link.setAddress(url);
 			
 		    Cell cell0 = row.getCell(0);
@@ -169,7 +169,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 		    cell0.setCellStyle(linkStyle);
 		    
 		    Cell cell3 = row.getCell(3);
-		    cell3.setCellValue((String)doc.getTitle());
+		    cell3.setCellValue((String)doc.getSolrSearchResult().getTitle());
 		    doc.setState(SearchResultState.RETRIEVED);
 		}
 		sheet.autoSizeColumn(0);

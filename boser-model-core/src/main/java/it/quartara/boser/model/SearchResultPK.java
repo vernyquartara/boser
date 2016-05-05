@@ -11,16 +11,16 @@ public class SearchResultPK implements Serializable {
 	private static final long serialVersionUID = -1691492284034411L;
 	
 	private Long key;
-	private String digest;
+	private String solrSearchResult;
 	
 	public SearchResultPK() {
 		super();
 	}
 	
-	public SearchResultPK(Long key, String digest) {
+	public SearchResultPK(Long key, String solrSearchResult) {
 		super();
 		this.key = key;
-		this.digest = digest;
+		this.solrSearchResult = solrSearchResult;
 	}
 	
 	public Long getKey() {
@@ -29,18 +29,12 @@ public class SearchResultPK implements Serializable {
 	public void setKey(Long key) {
 		this.key = key;
 	}
-	public String getTitle() {
-		return digest;
-	}
-	public void setTitle(String title) {
-		this.digest = title;
-	}
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((key == null) ? 0 : key.hashCode());
-		result = prime * result + ((digest == null) ? 0 : digest.hashCode());
+		result = prime * result + ((solrSearchResult == null) ? 0 : solrSearchResult.hashCode());
 		return result;
 	}
 	@Override
@@ -62,19 +56,22 @@ public class SearchResultPK implements Serializable {
 		} else if (!key.equals(other.key)) {
 			return false;
 		}
-		if (digest == null) {
-			if (other.digest != null) {
+		if (solrSearchResult == null) {
+			if (other.solrSearchResult != null) {
 				return false;
 			}
-		} else if (!digest.equals(other.digest)) {
+		} else if (!solrSearchResult.equals(other.solrSearchResult)) {
 			return false;
 		}
 		return true;
 	}
 
-	@Override
-	public String toString() {
-		return "SearchResultPK [digest=" + digest + ", key=" + key +"]";
+	public String getSolrSearchResult() {
+		return solrSearchResult;
 	}
-	
+
+	public void setSolrSearchResult(String solrSearchResult) {
+		this.solrSearchResult = solrSearchResult;
+	}
+
 }
