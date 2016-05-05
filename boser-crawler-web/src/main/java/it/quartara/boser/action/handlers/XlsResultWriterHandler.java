@@ -3,9 +3,11 @@ package it.quartara.boser.action.handlers;
 import static org.apache.poi.ss.usermodel.Cell.CELL_TYPE_STRING;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
@@ -17,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
@@ -26,6 +29,7 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +111,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    
 	    Font linkFont = wb.createFont();
 	    linkFont.setUnderline(Font.U_SINGLE);
-	    linkFont.setColor(IndexedColors.DARK_BLUE.getIndex());
+	    linkFont.setColor(IndexedColors.BLUE.getIndex());
 	    linkFont.setFontHeightInPoints((short)8);
 	    linkFont.setFontName("Arial");
 	    CellStyle linkStyle = wb.createCellStyle();
@@ -118,6 +122,16 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    linkStyle.setBorderRight(CellStyle.BORDER_THIN);
 	    linkStyle.setAlignment(CellStyle.ALIGN_CENTER);
 	    linkStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
+	    
+	    CellStyle dateCellStyle = wb.createCellStyle();
+	    dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd/MM/yy"));
+	    dateCellStyle.setBorderBottom(CellStyle.BORDER_THIN);
+	    dateCellStyle.setBorderLeft(CellStyle.BORDER_THIN);
+	    dateCellStyle.setBorderTop(CellStyle.BORDER_THIN);
+	    dateCellStyle.setBorderRight(CellStyle.BORDER_THIN);
+	    dateCellStyle.setAlignment(CellStyle.ALIGN_CENTER);
+	    dateCellStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
+	    dateCellStyle.setFont(defaultFont);
 	    
 	    log.debug("executing: from SearchResult where search.id={} and state={}",search.getId(), SearchResultState.INSERTED);
 	    List<SearchResult> docList = null;
@@ -171,6 +185,9 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 		    Cell cell3 = row.getCell(3);
 		    cell3.setCellValue((String)doc.getSolrSearchResult().getTitle());
 		    doc.setState(SearchResultState.RETRIEVED);
+		    
+		    Cell cell2 = row.getCell(2);
+		    cell2.setCellStyle(dateCellStyle);
 		}
 		sheet.autoSizeColumn(0);
 		sheet.setColumnWidth(1, 2007);
