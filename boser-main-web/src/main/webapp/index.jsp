@@ -41,7 +41,7 @@
 		<nav class="navbar navbar-default" bs-navbar>
 		  <div class="container-fluid">
 		    <div class="navbar-header">
-		      <a class="navbar-brand" href="#">boser.search</a>
+		      <a class="navbar-brand" href="#">boser</a>
 		    </div>
 		    <div>
 		      <ul class="nav navbar-nav">
