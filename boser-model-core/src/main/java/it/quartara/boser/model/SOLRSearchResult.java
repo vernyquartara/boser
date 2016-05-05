@@ -30,13 +30,6 @@ public class SOLRSearchResult implements Serializable {
 	@Column(columnDefinition = "VARCHAR(255)")
 	private String title;
 	
-//	@Column(columnDefinition = "CHAR(1)")
-//	@Convert(converter = SearchResultStateConverter.class)
-//	private SearchResultState state;
-	
-//	@ManyToOne
-//	private Search search;
-	
 	public String getUrl() {
 		return url;
 	}

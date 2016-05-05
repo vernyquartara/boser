@@ -7,7 +7,6 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
@@ -21,22 +20,12 @@ public class SearchResult implements Serializable {
 	/** */
 	private static final long serialVersionUID = 2269885353366595747L;
 
-//	@Id
-//	@Column(columnDefinition = "CHAR(32)", insertable=false, updatable=false)
-//	private String digest;
-//	 
-//	@Id
-//	@Column(name="key_id", insertable=false, updatable=false)
-//	private Long keyId;
-	
 	@Id
 	@ManyToOne
-	//@JoinColumn(name="digest")
 	private SOLRSearchResult solrSearchResult;
 	
 	@Id
 	@ManyToOne
-	//@JoinColumn(name="key_id")
 	private SearchKey key;
 	
 	@Column(columnDefinition = "CHAR(1)")

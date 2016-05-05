@@ -37,7 +37,6 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 
 	@Override
 	protected void execute(Search search, SearchKey key, SolrDocumentListWrapper documents) throws ActionException {
-		//Map<SearchResult, SolrDocument> duplicatedMap = new HashMap<SearchResult, SolrDocument>();
 		for (SolrDocument doc : documents.getList()) {
 			String digest = (String) doc.getFieldValue(DIGEST.toString());
 			String url = (String) doc.getFieldValue(URL.toString());
@@ -74,7 +73,6 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 				 * le chiavi associate al risultato stesso, è un duplicato
 				 */
 				log.debug("DUPLICATO: {}", solrSearchResult);
-				//duplicatedMap.put(searchResult, doc);
 				em.detach(solrSearchResult);
 			} else {
 				/*
@@ -96,46 +94,6 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 			}
 		}
 		em.flush();
-		
-		/*
-		 * gestione dei duplicati da rivedere
-		 * ogni volta scrive 100 risultati ma deve APPENDERE realmente non ricominciare ogni 100
-		 * 
-		if (!duplicatedMap.isEmpty()) {
-			log.debug("rimozione duplicati e creazione file dei duplicati");
-			documents.getList().removeAll(duplicatedMap.values());
-			File duplicatedFile = new File(searchRepo.getAbsolutePath()+File.separator
-											+"DUP-"+getSearchResultFileNameSubstringByKey(key)
-											+"-K"+key.getId()
-											+".txt");
-			try {
-				PrintWriter writer = new PrintWriter(new FileOutputStream(duplicatedFile, true));
-				writer.println(FILE_HEADER);
-				writer.println(FILE_TITLE);
-				writer.println(duplicatedMap.size()+" duplicati per "+key.getQuery()+"\r\n");
-				int i = 1;
-				for (Entry<SearchResult, SolrDocument> entry : duplicatedMap.entrySet()) {
-					SearchResult searchResult = entry.getKey();
-					SolrDocument doc = entry.getValue();
-					writer.append((i++ +")"+doc.getFieldValue(URL.toString())+"\r\n"));
-					writer.append(doc.getFieldValue(TITLE.toString())+"\r\n");
-					StringBuilder buffer = new StringBuilder();
-					buffer.append("Archiviato il ");
-					buffer.append(DateFormatUtils.format(searchResult.getSearch().getTimestamp(), "dd/MM/yy"));
-					buffer.append(", configurazione di ricerca: ");
-					buffer.append(searchResult.getSearch().getConfig().getDescription());
-					buffer.append(", crawler: ");
-					buffer.append(searchResult.getSearch().getConfig().getCrawler().getDescription());
-					writer.append(buffer.toString()+"\r\n\r\n");
-				}
-				writer.close();
-				log.info("wrote file: {}", duplicatedFile.getAbsolutePath());
-			} catch (IOException e) {
-				String msg = "problema di scrittura file dei duplicati";
-				throw new ActionException(msg, e);
-			}
-		}
-		*/
 	}
 	
 }
