@@ -109,7 +109,7 @@ public class CrawlerWorker implements MessageListener {
 											   "-D",
 											   "solr.server.url="+solrUrlParam.getValue(),
         									   "input",
-        									   crawlId,
+        									   "crawl", //si effettua il crawl sempre nella stessa cartella
         									   Short.valueOf(request.getIndexConfig().getDepth()).toString());
         pb.directory(new File(nutchHome));
         String logFilePath = nutchHome+File.separator+"logs"+File.separator+crawlId+".log";
