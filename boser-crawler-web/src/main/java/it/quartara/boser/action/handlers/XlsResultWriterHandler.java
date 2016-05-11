@@ -142,11 +142,12 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    	log.error("eccezione imprevista", e);
 	    }
 	    
-	    Sheet sheet = wb.createSheet("Foglio1");
-	    createHeader(sheet, headerStyle);
+	    int sheetCounter = 1;
+	    Sheet sheet = wb.createSheet("Foglio"+sheetCounter);
 	    int rowCounter = 1;
+	    createHeader(sheet, headerStyle);
 	    for (SearchResult doc : docList) {
-	    	if (rowCounter == 65535) {
+	    	if (rowCounter % 65535 == 0) {
 	    		sheet.autoSizeColumn(0);
 	    		sheet.setColumnWidth(1, 2007);
 	    		sheet.setColumnWidth(2, 2755);
@@ -158,7 +159,7 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    		 * si crea un nuovo foglio al raggiungimento dei 65536 risultati
 	    		 * non si prevede che si necessario un terzo foglio
 	    		 */
-	    		sheet = wb.createSheet("Foglio2");
+	    		sheet = wb.createSheet("Foglio"+ ++sheetCounter);
 	    		createHeader(sheet, headerStyle);
 	    		rowCounter = 1;
 	    	}
