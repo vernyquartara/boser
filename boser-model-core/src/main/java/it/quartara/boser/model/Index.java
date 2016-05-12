@@ -14,7 +14,7 @@ public class Index extends PersistentEntity {
 	private Date creationDate;
 	private String path;
 	private short depth;
-	private short topN;
+	private int topN;
 	
 	public String getPath() {
 		return path;
@@ -34,10 +34,10 @@ public class Index extends PersistentEntity {
 	public void setDepth(short depth) {
 		this.depth = depth;
 	}
-	public short getTopN() {
+	public int getTopN() {
 		return topN;
 	}
-	public void setTopN(short topN) {
+	public void setTopN(int topN) {
 		this.topN = topN;
 	}
 }

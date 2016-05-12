@@ -9,6 +9,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Version;
 
 @Entity
 @Table(name="SOLR_SEARCH_RESULTS")
@@ -29,6 +30,9 @@ public class SOLRSearchResult implements Serializable {
 	
 	@Column(columnDefinition = "VARCHAR(255)")
 	private String title;
+	
+	@Version
+	private long version;
 	
 	public String getUrl() {
 		return url;
@@ -85,6 +89,13 @@ public class SOLRSearchResult implements Serializable {
 	}
 	public void setFoundResults(Set<SearchResult> foundResults) {
 		this.foundResults = foundResults;
+	}
+	
+	public long getVersion() {
+		return version;
+	}
+	public void setVersion(long version) {
+		this.version = version;
 	}
 
 }

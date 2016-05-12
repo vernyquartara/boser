@@ -8,7 +8,23 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.annotation.Resource;
+import javax.ejb.EJBContext;
+import javax.ejb.EJBException;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionManagement;
+import javax.ejb.TransactionManagementType;
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.PersistenceContext;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
+import javax.transaction.Transactional;
+import javax.transaction.UserTransaction;
+import javax.transaction.Transactional.TxType;
 
 import org.apache.solr.common.SolrDocument;
 import org.slf4j.Logger;
@@ -19,6 +35,7 @@ import it.quartara.boser.model.SOLRSearchResult;
 import it.quartara.boser.model.Search;
 import it.quartara.boser.model.SearchKey;
 import it.quartara.boser.model.SearchResult;
+import it.quartara.boser.model.SearchResultPK;
 import it.quartara.boser.model.SearchResultState;
 import it.quartara.boser.solr.SolrDocumentListWrapper;
 
@@ -27,16 +44,19 @@ import it.quartara.boser.solr.SolrDocumentListWrapper;
  * @author webny
  *
  */
-public class SearchResultPersisterHandler extends AbstractActionHandler {
+@Stateless
+public class SearchResultPersisterHandler {
 	
 	private static final Logger log = LoggerFactory.getLogger(SearchResultPersisterHandler.class);
 	
-	public SearchResultPersisterHandler(EntityManager em, File searchRepo) {
-		super(em, searchRepo);
-	}
+	@PersistenceContext(name="BoserPU")
+	private EntityManager em;
+	
+	@Resource
+	private EJBContext context;
 
-	@Override
-	protected void execute(Search search, SearchKey key, SolrDocumentListWrapper documents) throws ActionException {
+	
+	public void persistSearchResults(Search search, SearchKey key, SolrDocumentListWrapper documents) throws ActionException {
 		for (SolrDocument doc : documents.getList()) {
 			String digest = (String) doc.getFieldValue(DIGEST.toString());
 			String url = (String) doc.getFieldValue(URL.toString());
@@ -45,55 +65,89 @@ public class SearchResultPersisterHandler extends AbstractActionHandler {
 				title = "";
 			}
 			
-			SOLRSearchResult solrSearchResult = em.find(SOLRSearchResult.class, digest);
-			if (solrSearchResult==null) {
+			SearchResultPK srpk = new SearchResultPK(key.getId(), digest);
+			SearchResult searchResult = em.find(SearchResult.class, srpk);
+			if (searchResult != null) {
 				/*
-				 * se nullo, è la prima volta che viene restituito questo risultato.
-				 * va aggiunto, relativamente alla ricerca corrente.
+				 * se esiste è un duplicato, stop.
 				 */
-				solrSearchResult = new SOLRSearchResult();
+				log.debug("DUPLICATO: {}", searchResult);
+				em.detach(searchResult);
+			} else {
+				/*
+				 * controllo prima se esiste il SOLRSearchResult,
+				 * se non esiste lo inserisco ma devo lockare per evitare
+				 * che un altro thread faccia la stessa cosa.
+				 * Il lock va rilasciato subito dopo l'inserimento.
+				 * 
+				 * il problema è che il lock viene rilasciato solo al commit,
+				 * questo vuol dire che deve essere aperta una nuova transazione
+				 * specificamente per l'inserimento del SOLRSearchResult.
+				 * Per questo si può usare un metodo a parte ma la classe deve
+				 * essere trasformata in un EJB.
+				 */
+				SOLRSearchResult solrSearchResult = insertSOLRSearchResultIfNotExists(digest, url, title);
+				
+				SearchResult newSearchResult = new SearchResult();
+				newSearchResult.setSolrSearchResult(solrSearchResult);
+				newSearchResult.setKey(key);
+				newSearchResult.setSearch(search);
+				newSearchResult.setState(SearchResultState.INSERTED);
+				
+				em.persist(newSearchResult);
+			}
+		}
+		//em.flush();
+	}
+
+	@Transactional(TxType.REQUIRES_NEW)
+	public SOLRSearchResult insertSOLRSearchResultIfNotExists(String digest, String url, String title) {
+		SOLRSearchResult solrSearchResult = em.find(SOLRSearchResult.class, digest, LockModeType.PESSIMISTIC_WRITE);
+		if (solrSearchResult == null) {
+			solrSearchResult = new SOLRSearchResult();
+			solrSearchResult.setDigest(digest);
+			solrSearchResult.setUrl(url);
+			solrSearchResult.setTitle(title);
+			em.persist(solrSearchResult);
+		}
+		return solrSearchResult;
+	}
+	
+	
+	
+	/*
+	 * 
+	
+	SearchResultPK srpk = new SearchResultPK(key.getId(), digest);
+			SearchResult searchResult = em.find(SearchResult.class, srpk);
+			if (searchResult != null) {
+				/*
+				 * se esiste è un duplicato, stop.
+				 *
+				log.debug("DUPLICATO: {}", searchResult);
+				em.detach(searchResult);
+			} else {
+				/*
+				 * se non esiste va inserito, lasciando gestire il cascade
+				 * di inserimento a jpa.
+				 *
+				SOLRSearchResult solrSearchResult = new SOLRSearchResult();
 				solrSearchResult.setDigest(digest);
 				solrSearchResult.setUrl(url);
 				solrSearchResult.setTitle(title);
 				
-				SearchResult searchResult = new SearchResult();
-				searchResult.setSolrSearchResult(solrSearchResult);
-				searchResult.setKey(key);
-				searchResult.setSearch(search);
-				searchResult.setState(SearchResultState.INSERTED);
+				SearchResult newSearchResult = new SearchResult();
+				newSearchResult.setSolrSearchResult(solrSearchResult);
+				newSearchResult.setKey(key);
+				newSearchResult.setSearch(search);
+				newSearchResult.setState(SearchResultState.INSERTED);
 				
-				Set<SearchResult> foundResults = new HashSet<>();
-				foundResults.add(searchResult);
-				solrSearchResult.setFoundResults(foundResults);
-				
-				em.persist(solrSearchResult);
-			} else if (solrSearchResult.getFoundResults().contains(key)) {
-				/*
-				 * se esiste il risultato e la chiave corrente figura tra
-				 * le chiavi associate al risultato stesso, è un duplicato
-				 */
-				log.debug("DUPLICATO: {}", solrSearchResult);
-				em.detach(solrSearchResult);
-			} else {
-				/*
-				 * altrimenti il risultato va restituito e la chiave va aggiunta
-				 * tra le chiavi associate al risultato, per evitare che lo stesso
-				 * venga restituito in futuro
-				 */
-				if (solrSearchResult.getFoundResults()==null) {
-					solrSearchResult.setFoundResults(new HashSet<SearchResult>());
-				}
-				SearchResult searchResult = new SearchResult();
-				searchResult.setSolrSearchResult(solrSearchResult);
-				searchResult.setKey(key);
-				searchResult.setSearch(search);
-				searchResult.setState(SearchResultState.INSERTED);
-				
-				solrSearchResult.getFoundResults().add(searchResult);
-				em.merge(solrSearchResult);
+				em.persist(newSearchResult);
 			}
-		}
-		em.flush();
-	}
+	
+	
+	 * 
+	 * 
+	 */
 	
 }

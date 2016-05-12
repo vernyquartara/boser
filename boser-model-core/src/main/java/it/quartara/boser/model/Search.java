@@ -46,4 +46,5 @@ public class Search extends PersistentEntity {
 		}
 		return null;
 	}
+	
 }

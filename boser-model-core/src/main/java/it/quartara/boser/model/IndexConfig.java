@@ -17,7 +17,7 @@ public class IndexConfig extends PersistentEntity {
 	@ManyToOne
 	private Crawler crawler;
 	private short depth;
-	private short topN;
+	private int topN;
 	@OneToMany(fetch=FetchType.EAGER)
 	private Set<Site> sites;
 	
@@ -27,10 +27,10 @@ public class IndexConfig extends PersistentEntity {
 	public void setDepth(short depth) {
 		this.depth = depth;
 	}
-	public short getTopN() {
+	public int getTopN() {
 		return topN;
 	}
-	public void setTopN(short topN) {
+	public void setTopN(int topN) {
 		this.topN = topN;
 	}
 	public Set<Site> getSites() {

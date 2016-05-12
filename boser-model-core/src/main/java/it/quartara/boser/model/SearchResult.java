@@ -2,6 +2,7 @@ package it.quartara.boser.model;
 
 import java.io.Serializable;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -9,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Version;
 
 import it.quartara.boser.model.converter.SearchResultStateConverter;
 
@@ -21,7 +23,7 @@ public class SearchResult implements Serializable {
 	private static final long serialVersionUID = 2269885353366595747L;
 
 	@Id
-	@ManyToOne
+	@ManyToOne(cascade=CascadeType.PERSIST)
 	private SOLRSearchResult solrSearchResult;
 	
 	@Id
@@ -34,6 +36,9 @@ public class SearchResult implements Serializable {
 	
 	@ManyToOne
 	private Search search;
+	
+	@Version
+	private long version;
 
 
 	public SOLRSearchResult getSolrSearchResult() {
@@ -109,6 +114,14 @@ public class SearchResult implements Serializable {
 	@Override
 	public String toString() {
 		return "SearchResult [solrSearchResult=" + solrSearchResult + ", key=" + key + "]";
+	}
+
+	public long getVersion() {
+		return version;
+	}
+
+	public void setVersion(long version) {
+		this.version = version;
 	}
 
 }
