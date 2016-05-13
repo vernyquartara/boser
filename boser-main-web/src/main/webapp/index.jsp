@@ -28,16 +28,6 @@
 
 	<div ng-app="Boser" class="container">
 	
-		<!-- <div class="jumbotron">
-  			<h1>Boser</h1>
-  			<p>vertical search engine</p>
-		</div> -->
-		
-		 <%-- <div class="btn-group btn-group-justified">
-  			<a href="<c:url value="/index.jsp#/crawler"/>" class="btn btn-primary">Crawl</a>
-  			<a href="<c:url value="/index.jsp#/search"/>" class="btn btn-primary">Ricerca</a>
-		</div> --%>
-		
 		<nav class="navbar navbar-default" bs-navbar>
 		  <div class="container-fluid">
 		    <div class="navbar-header">

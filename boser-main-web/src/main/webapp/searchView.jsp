@@ -95,10 +95,10 @@
 					<th>id</th>
 					<th>stato</th>
 					<th>avviata il</th>
-					<th>terminata il</th>
+					<th>ultimo aggiornamento</th>
 					<th>file</th>
-					<th>crawler</th>
-					<th>chiavi</th>
+					<!-- <th>crawler</th>
+					<th>chiavi</th> -->
 				</tr>
 			</thead>
 			<tbody>
@@ -108,8 +108,8 @@
 					<td>{{req.creationDate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- request -->
 					<td>{{req.lastUpdate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- request -->
 					<td><a href="<c:url value="/searchDownload"/>?searchId={{req.search.id}}">{{req.search.zipLabel}}</a></td><!-- search -->
-					<td>{{req.searchConfig.crawler.description}}</td><!-- crawler -->
-					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td>
+					<!-- <td>{{req.searchConfig.crawler.description}}</td>
+					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td> -->
 				</tr>
 			</tbody>
 		</table>

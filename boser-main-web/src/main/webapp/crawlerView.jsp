@@ -61,7 +61,6 @@
 			</div>
 		</form>
 	</div>
-	<!-- <pre>{{formData}}</pre> -->
 </div>
 
 <!-- LISTA -->
@@ -77,8 +76,8 @@
 					<th>ultimo aggiornamento</th>
 					<th>depth</th>
 					<th>topN</th>
-					<!-- <th>crawler</th> -->
-					<th>fonti</th>
+					<!-- <th>crawler</th>
+					<th>fonti</th> -->
 				</tr>
 			</thead>
 			<tbody>
@@ -89,8 +88,8 @@
 					<td>{{req.lastUpdate | date:'dd-MM-yy, HH:mm:ss'}}</td><!-- index -->
 					<td>{{req.index.depth}}</td><!-- IndexConfig -->
 					<td>{{req.index.topN}}</td><!-- IndexConfig -->
-					<!-- <td>{{req.index.crawler.description}}</td> --><!-- crawler -->
-					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td><!-- IndexConfig -->
+					<!-- <td>{{req.index.crawler.description}}</td>
+					<td><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span></button></td> -->
 				</tr>
 			</tbody>
 		</table>
