@@ -132,7 +132,8 @@ public class SearchWorker implements MessageListener {
 		Parameter solrUrlParam = em.find(Parameter.class, "SOLR_URL");
 		HttpSolrServer solr = new HttpSolrServer(solrUrlParam.getValue());
 		for (SearchKey key : searchConfig.getKeys()) {
-			String queryText = key.getQuery();
+			String keyText = key.getQuery();
+			String queryText = "url:"+keyText+" OR title:"+keyText;
 			/*
 			 * per motivi di buffering si suddividono le ricerche su solr in lotti da "solrMaxResults"
 			 * utile specialmente in caso di prima ricerca quando lo storico è vuoto
