@@ -132,10 +132,14 @@ public class XlsResultWriterHandler extends AbstractActionHandler {
 	    log.debug("executing: from SearchResult where search.id={} and state={}",search.getId(), SearchResultState.INSERTED);
 	    List<SearchResult> docList = null;
 	    try {
-	    	TypedQuery<SearchResult> query = em.createQuery("from SearchResult sr where sr.search.id=:searchId and sr.state=:stateId",
+	    	TypedQuery<SearchResult> query = em.createQuery("from SearchResult sr where sr.search.id=:searchId and sr.state=:stateId"+
+	    													" and sr.key.id=:keyId "+
+	    													" order by SUBSTRING(sr.solrSearchResult.url, 8, LOCATE('/', sr.solrSearchResult.url, 8)-8), "+
+	    													" sr.solrSearchResult.title",
 	    												SearchResult.class);
 	    	query.setParameter("searchId", search.getId());
 	    	query.setParameter("stateId", SearchResultState.INSERTED);
+	    	query.setParameter("keyId", key.getId());
 	    	docList = query.getResultList();
 	    	log.debug("tot. results: {}", docList.size());
 	    } catch (Exception e) {
