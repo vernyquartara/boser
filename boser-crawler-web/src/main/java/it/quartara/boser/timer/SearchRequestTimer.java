@@ -23,6 +23,8 @@ import javax.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.quartara.boser.action.ActionException;
+import it.quartara.boser.action.handlers.XlsWriterHelper;
 import it.quartara.boser.model.ExecutionState;
 import it.quartara.boser.model.Parameter;
 import it.quartara.boser.model.Search;
@@ -55,7 +57,7 @@ public class SearchRequestTimer {
 	public void startTimer(long searchRequestId, long initialDuration, long intervalDuration) {
         log.info("Setting SearchRequestTimer for request id {}", searchRequestId);
         timerService.createIntervalTimer(initialDuration, initialDuration, 
-        								 new TimerConfig(new Long(searchRequestId),false));
+        								 new TimerConfig(new Long(searchRequestId),true));
     }
 	
 	@SuppressWarnings("incomplete-switch")
@@ -67,19 +69,65 @@ public class SearchRequestTimer {
         Long searchRequestId = (Long) timer.getInfo();
         log.info("handling searchRequestId {}", searchRequestId);
         SearchRequest searchRequest = em.find(SearchRequest.class, searchRequestId);
+        if (searchRequest == null) {
+        	log.warn("SearchRequest NOT FOUND for id {} - are you debugging?", searchRequestId);
+        	log.warn("no point in run again, timer canceled");
+        	timer.cancel();
+        	return;
+        }
         for (SearchItemRequest item : searchRequest.getItems()) {
         	if (item.getState() == ExecutionState.READY) {
-        		log.debug("item {} ancora in elaborazione ({})", item.getId(), item.getSearchKey().getQuery());
+        		log.debug("item {}/{} ancora in elaborazione ({})", item.getId(), item.getLastUpdate(), item.getSearchKey().getQuery());
+        		/*
+        		if (item.getLastUpdate().before(DateUtils.addHours(new Date(), -2))) {
+        			//expiration ... TBD
+        		}
+        		*/
         		return;
         	}
         }
         
         /*
-		 * creazione del file zip con i risultati.
-		 */
+         * tutti gli items in stato ERROR o COMPLETED. si completa la richiesta padre.
+         */
+		int countCompleted = 0, countFailed = 0;
+		for (SearchItemRequest item : searchRequest.getItems()) {
+			switch (item.getState()) {
+			case COMPLETED 	: countCompleted++; break;
+			case ERROR		: countFailed++; break;
+			}
+        }
+		log.info("items completed: {} failed: {}", countCompleted, countFailed);
+        searchRequest.setLastUpdate(new Date());
+        searchRequest.setState(countCompleted > 0 ? ExecutionState.COMPLETED : ExecutionState.ERROR);
+        em.merge(searchRequest);
+        /*
+         * creazione report
+         */
         Parameter param = em.find(Parameter.class, "SEARCH_REPO");
 		String repo = param.getValue();
 		String searchPath = repo+File.separator+searchRequest.getSearchConfig().getId()+File.separator+searchRequest.getSearch().getId();
+        try {
+			XlsWriterHelper.writeXlsReport(searchRequest, new File(searchPath));
+		} catch (ActionException e) {
+			log.warn("errore durante la creazione del report", e);
+			if (countCompleted == 0) {
+				/*
+				 * se non ci sono items completati e non si è riusciti nemmeno
+				 * a creare il report, non ha senso creare lo zip,
+				 * l'elaborazione si ferma.
+				 */
+				log.error("richiesta in errore, la creazione dello zip non sarà effettuata");
+				searchRequest.setLastUpdate(new Date());
+				searchRequest.setState(ExecutionState.ERROR);
+				em.merge(searchRequest);
+				return;
+			}
+		}
+        
+        /*
+		 * creazione del file zip con i risultati.
+		 */
 		File zipFile = null;
 		Date now = new Date();
 		try {
@@ -99,20 +147,6 @@ public class SearchRequestTimer {
         
         
         /*
-         * tutti gli items in stato ERROR o COMPLETED. si completa la richiesta padre.
-         */
-		int countCompleted = 0, countFailed = 0;
-		for (SearchItemRequest item : searchRequest.getItems()) {
-			switch (item.getState()) {
-			case COMPLETED 	: countCompleted++; break;
-			case ERROR		: countFailed++; break;
-			}
-        }
-		log.info("items completed: {} failed: {}", countCompleted, countFailed);
-        searchRequest.setLastUpdate(new Date());
-        searchRequest.setState(countCompleted > 0 ? ExecutionState.COMPLETED : ExecutionState.ERROR);
-        em.merge(searchRequest);
-        /*
          * cancellazione timer
          */
         timer.cancel();
@@ -130,8 +164,7 @@ public class SearchRequestTimer {
 			
 			@Override
 			public boolean accept(File dir, String name) {
-				return name.toLowerCase().endsWith(".txt") || name.toLowerCase().endsWith(".pdf")
-						|| name.toLowerCase().endsWith(".xls");
+				return name.toLowerCase().endsWith(".txt") || name.toLowerCase().endsWith(".xls");
 			}
 		});
 		for (File file : files) {

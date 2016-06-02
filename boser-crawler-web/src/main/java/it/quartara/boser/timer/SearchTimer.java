@@ -1,11 +1,15 @@
 package it.quartara.boser.timer;
 
+import static it.quartara.boser.AppConstants.LAST_SEARCH_TIMESTAMP;
 import static it.quartara.boser.AppConstants.SEARCH_REPO_PATH;
 import static it.quartara.boser.AppConstants.SEARCH_REQUEST_ITEM_ID;
 import static it.quartara.boser.AppConstants.SOLR_MAX_RESULTS;
 import static it.quartara.boser.AppConstants.SOLR_URL;
+import static it.quartara.boser.AppConstants.SEARCH_UBOUND_TIMESTAMP;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +67,8 @@ public class SearchTimer {
     @EJB
     private SearchRequestTimer searchRequestTimer;
     
+    private static final DateFormat df = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    
 	@Schedule(second="*/10", minute="*", hour="*", dayOfWeek="*", dayOfMonth="*", month="*", year="*", info="MyTimer", persistent=false)
     private void scheduledTimeout(final Timer t) {
 		log.debug("Controllo search da avviare");
@@ -97,7 +103,6 @@ public class SearchTimer {
 		}
 		
 		SearchRequest requestToStart = elements.get(0);
-		
 		/*
 		 * creazione nuova ricerca e relativa cartella su fs per i risultati
 		 */
@@ -121,6 +126,8 @@ public class SearchTimer {
 		Parameter solrMaxResultsParam = em.find(Parameter.class, "SOLR_QUERY_MAX_RESULT_SIZE");
 		int solrMaxResults = Integer.valueOf(solrMaxResultsParam.getValue());
 		Parameter solrUrlParam = em.find(Parameter.class, "SOLR_URL");
+		String upperBoundTimestamp = df.format(now);
+		log.info("SOLR search upper bound timestamp: {}", upperBoundTimestamp);
 		
 		JMSProducer jmsProducer = context.createProducer();
 		for (SearchKey key : requestToStart.getSearchConfig().getKeys()) {
@@ -136,6 +143,8 @@ public class SearchTimer {
 			params.put(SEARCH_REPO_PATH, searchRepo.getAbsolutePath());
 			params.put(SOLR_MAX_RESULTS, new Integer(solrMaxResults));
 			params.put(SOLR_URL, solrUrlParam.getValue());
+			params.put(LAST_SEARCH_TIMESTAMP, getLastSearchTimestamp());
+			params.put(SEARCH_UBOUND_TIMESTAMP, upperBoundTimestamp);
 			jmsProducer.send(queue, params);
 		}
 		
@@ -149,4 +158,13 @@ public class SearchTimer {
 		requestToStart.setState(ExecutionState.STARTED);
 		em.merge(requestToStart);
     }
+
+	private String getLastSearchTimestamp() {
+		Date lastNonFailedRequest = 
+				em.createQuery("select max(timestamp) from Search where zipFilePath is not null", Date.class)
+				.getSingleResult();
+		String formattedTimestamp = df.format(lastNonFailedRequest);
+		log.info("SOLR search lower bound timestamp: {}", formattedTimestamp);
+		return formattedTimestamp;
+	}
 }

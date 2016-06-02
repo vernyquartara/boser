@@ -1,17 +1,20 @@
 package it.quartara.boser.worker;
 
+import static it.quartara.boser.AppConstants.LAST_SEARCH_TIMESTAMP;
 import static it.quartara.boser.AppConstants.SEARCH_REPO_PATH;
 import static it.quartara.boser.AppConstants.SEARCH_REQUEST_ITEM_ID;
 import static it.quartara.boser.AppConstants.SOLR_MAX_RESULTS;
 import static it.quartara.boser.AppConstants.SOLR_URL;
+import static it.quartara.boser.AppConstants.SEARCH_UBOUND_TIMESTAMP;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.ejb.ActivationConfigProperty;
-import javax.ejb.EJB;
 import javax.ejb.EJBContext;
 import javax.ejb.EJBException;
 import javax.ejb.MessageDriven;
@@ -22,7 +25,6 @@ import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 import javax.persistence.PersistenceContext;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -32,6 +34,7 @@ import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrQuery.SortClause;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -39,9 +42,7 @@ import org.apache.solr.common.SolrDocumentList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.quartara.boser.action.ActionException;
-import it.quartara.boser.action.handlers.SearchResultPersisterHandler;
-import it.quartara.boser.action.handlers.XlsResultWriterHandler;
+import it.quartara.boser.action.handlers.XlsWriterHelper;
 import it.quartara.boser.model.ExecutionState;
 import it.quartara.boser.model.Parameter;
 import it.quartara.boser.model.SearchItemRequest;
@@ -62,9 +63,6 @@ public class SearchItemWorker implements MessageListener {
 	@Resource
 	private EJBContext context;
 	
-	@EJB
-	private SearchResultPersisterHandler srph;
-
 	@SuppressWarnings("unchecked")
 	@Override
 	public void onMessage(Message message) {
@@ -72,6 +70,8 @@ public class SearchItemWorker implements MessageListener {
 		File searchRepo = null;
 		int solrMaxResults = 0;
 		String solrUrl = null;
+		String filterQueryStartTimestamp = null;
+		String filterQueryEndTimestamp = null;
 		try {
 			if (message instanceof MapMessage) {
 				Map<String, Object> params = message.getBody(Map.class);
@@ -79,6 +79,8 @@ public class SearchItemWorker implements MessageListener {
 				searchRepo = new File( (String) params.get(SEARCH_REPO_PATH));
 				solrMaxResults = (Integer)params.get(SOLR_MAX_RESULTS);
 				solrUrl = (String) params.get(SOLR_URL);
+				filterQueryStartTimestamp = (String) params.get(LAST_SEARCH_TIMESTAMP);
+				filterQueryEndTimestamp = (String) params.get(SEARCH_UBOUND_TIMESTAMP);
 				log.info("Received searchRequestId from queue: {}", searchRequestItemId);
 			} else {
 				log.warn("Message of wrong type: " + message.getClass().getName());
@@ -104,30 +106,32 @@ public class SearchItemWorker implements MessageListener {
 		log.debug("handling search request: {}", item);
 		
 		/*
-		 * creazione servizi
-		 */
-		XlsResultWriterHandler xrwh = new XlsResultWriterHandler(em, searchRepo);
-		/*
 		 * si carica la chiave e si effettua una ricerca su solr
 		 * per motivi di buffering si suddividono le ricerche su solr in lotti da "solrMaxResults"
 		 * utile specialmente in caso di prima ricerca quando lo storico è vuoto
 		 */
 		HttpSolrServer solr = new HttpSolrServer(solrUrl);
-		String queryText = item.getSearchKey().getQuery();
-		Date now = new Date();
+		String keyText = item.getSearchKey().getQuery();
+		String queryText = "url:"+keyText+" OR title:"+keyText;
+		String filterQueryText = "tstamp:["+filterQueryStartTimestamp+" TO "+filterQueryEndTimestamp+"]";
 		for (int i = 0; i < Integer.MAX_VALUE; i += solrMaxResults) {
+			List<SortClause> sort = new ArrayList<>();
+			sort.add(new SortClause("testata", SolrQuery.ORDER.asc));
+			sort.add(new SortClause("titolo", SolrQuery.ORDER.asc));
 			SolrQuery query = new SolrQuery();
-			query.setFields("url", "title", "digest");
-			query.setQuery(queryText);
-			query.setStart(i);
-			query.setRows(solrMaxResults);
+			query.setFields("url", "title")
+				  .setQuery(queryText)
+				  .setFilterQueries(filterQueryText)
+				  .setSorts(sort)
+				  .setStart(i)
+				  .setRows(solrMaxResults);
 			QueryResponse queryResponse = null;
 			try {
-				log.debug("esecuzione ricerca su Sorl, query: {}, start: {}", queryText, i);
+				log.debug("esecuzione ricerca su Sorl, query: {}, filterQuery: {}, start: {}", queryText, filterQueryText, i);
 				queryResponse = solr.query(query);
 			} catch (SolrServerException e) {
 				log.error("errore durante l'esecuzione della ricerca su Solr",e);
-				item.setLastUpdate(now);
+				item.setLastUpdate(new Date());
 				item.setState(ExecutionState.ERROR);
 				em.merge(item);
 				try {
@@ -141,48 +145,38 @@ public class SearchItemWorker implements MessageListener {
 			SolrDocumentList docList = queryResponse.getResults();
 			log.debug("Solr restituisce {} risultati", docList.size());
 			if (docList.size()==0) {
+				/* sono finiti i risultati da elaborare */
 				break;
 			}
 			SolrDocumentListWrapper docListWrapper = new SolrDocumentListWrapper(docList);
 			if (i==0) docListWrapper.setAppend(Boolean.FALSE);
 			try {
-				log.debug("avvio persistenza risultati");
-				srph.persistSearchResults(item.getSearchRequest().getSearch(), item.getSearchKey(), docListWrapper);
-			} catch (ActionException e) {
+				log.debug("avvio scrittura risultati");
+				XlsWriterHelper.writeXlsResult(item.getSearchRequest().getSearch(), item.getSearchKey(), docListWrapper, searchRepo);
+			} catch (Exception e) {
 				StringBuilder buffer = new StringBuilder();
-				buffer.append("Si è verificato un errore durante la persistenza dei risultati ");
+				buffer.append("Si è verificato un errore durante la scrittura dei risultati ");
 				buffer.append("per la chiave di ricerca "+queryText);
 				log.error(buffer.toString(), e);
 				/*
-				 * si ritenta l'esecuzione
+				 * si mette in stato ERROR
 				 */
-				throw new EJBException(e);
-			}
-		}
-		/*
-		 * output su file
-		 */
-		try {
-			xrwh.handle(item.getSearchRequest().getSearch(), item.getSearchKey(), null);
-		} catch (ActionException e) {
-			StringBuilder buffer = new StringBuilder();
-			buffer.append("Si è verificato un errore durante la scrittura del file xls ");
-			buffer.append("per la chiave di ricerca "+queryText);
-			log.error(buffer.toString(), e);
-			item.setLastUpdate(now);
-			item.setState(ExecutionState.ERROR);
-			try {
-				tx.commit();
-				return;
-			} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
-					| HeuristicRollbackException | SystemException e1) {
-				throw new EJBException("impossibile effettuare commit della transazione", e1);
+				item.setLastUpdate(new Date());
+				item.setState(ExecutionState.ERROR);
+				em.merge(item);
+				try {
+					tx.commit();
+					return;
+				} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+						| HeuristicRollbackException | SystemException e1) {
+					throw new EJBException("impossibile effettuare commit della transazione", e1);
+				}
 			}
 		}
 		/*
 		 * tutto è andato bene
 		 */
-		item.setLastUpdate(now);
+		item.setLastUpdate(new Date());
 		item.setState(ExecutionState.COMPLETED);
 		em.merge(item);
 		try {
