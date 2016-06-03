@@ -346,9 +346,9 @@ public class XlsWriterHelper {
 		    Cell cell3 = row.getCell(3);
 		    cell3.setCellValue(item.getSearchKey().getQuery());
 		    
-		    for (int i = 0; i < headers.length; i++) {
-		    	sheet.autoSizeColumn(i);
-		    }
+		}
+		for (int i = 0; i < headers.length; i++) {
+			sheet.autoSizeColumn(i);
 		}
 		
 		try {
