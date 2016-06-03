@@ -147,14 +147,17 @@ public class XlsWriterHelper {
 		    Cell cell2 = row.getCell(2);
 		    cell2.setCellStyle(dateCellStyle);
 		    
-		    sheet.autoSizeColumn(0);
-    		sheet.setColumnWidth(1, 2007);
-    		sheet.setColumnWidth(2, 2755);
-    		sheet.autoSizeColumn(3);
-    		sheet.setColumnWidth(4, 3651);
-    		sheet.setColumnWidth(5, 3838);
-    		sheet.setColumnWidth(6, 3191);
 		}
+	    for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+	    	Sheet s = wb.getSheetAt(i);
+	    	s.autoSizeColumn(0);
+	    	s.setColumnWidth(1, 2007);
+	    	s.setColumnWidth(2, 2755);
+	    	s.autoSizeColumn(3);
+	    	s.setColumnWidth(4, 3651);
+	    	s.setColumnWidth(5, 3838);
+	    	s.setColumnWidth(6, 3191);
+	    }
 		try {
 			if (fileIn != null)   {
 				FileOutputStream fos = new FileOutputStream(outputFile);

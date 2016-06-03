@@ -161,7 +161,7 @@ public class SearchTimer {
 
 	private String getLastSearchTimestamp() {
 		Date lastNonFailedRequest = 
-				em.createQuery("select max(timestamp) from Search where zipFilePath is not null", Date.class)
+				em.createQuery("select max(creationDate) from CrawlRequest where state = 'COMPLETED'", Date.class)
 				.getSingleResult();
 		String formattedTimestamp = df.format(lastNonFailedRequest);
 		log.info("SOLR search lower bound timestamp: {}", formattedTimestamp);
