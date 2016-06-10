@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.ejb.ActivationConfigProperty;
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import it.quartara.boser.action.handlers.XlsWriterHelper;
 import it.quartara.boser.model.ExecutionState;
+import it.quartara.boser.model.IndexField;
 import it.quartara.boser.model.Parameter;
 import it.quartara.boser.model.SearchItemRequest;
 import it.quartara.boser.solr.SolrDocumentListWrapper;
@@ -111,8 +113,7 @@ public class SearchItemWorker implements MessageListener {
 		 * utile specialmente in caso di prima ricerca quando lo storico è vuoto
 		 */
 		HttpSolrServer solr = new HttpSolrServer(solrUrl);
-		String keyText = item.getSearchKey().getQuery();
-		String queryText = "url:"+keyText+" OR title:"+keyText;
+		String queryText = getQueryText(item.getSearchKey().getTerms());
 		String filterQueryText = "tstamp:["+filterQueryStartTimestamp+" TO "+filterQueryEndTimestamp+"]";
 		for (int i = 0; i < Integer.MAX_VALUE; i += solrMaxResults) {
 			List<SortClause> sort = new ArrayList<>();
@@ -123,6 +124,7 @@ public class SearchItemWorker implements MessageListener {
 				  .setQuery(queryText)
 				  .setFilterQueries(filterQueryText)
 				  .setSorts(sort)
+				  .setParam("df", IndexField.TITLE.toString().toLowerCase())
 				  .setStart(i)
 				  .setRows(solrMaxResults);
 			QueryResponse queryResponse = null;
@@ -186,6 +188,19 @@ public class SearchItemWorker implements MessageListener {
 				| HeuristicRollbackException | SystemException e1) {
 			throw new EJBException("impossibile effettuare commit della transazione", e1);
 		}
+	}
+
+	private String getQueryText(Set<String> terms) {
+		final String url = IndexField.URL.toString().toLowerCase();
+		StringBuilder buffer = new StringBuilder();
+		for (String term : terms) {
+			buffer.append(url+":"+"\""+term+"\" ");
+		}
+		final String title = IndexField.TITLE.toString().toLowerCase();
+		for (String term : terms) {
+			buffer.append(title+":"+"\""+term+"\" ");
+		}
+		return buffer.toString().trim();
 	}
 	
 }
