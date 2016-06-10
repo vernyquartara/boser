@@ -120,14 +120,17 @@ public class CrawlerWorker implements MessageListener {
 		try {
 			utx.setTransactionTimeout(Integer.MAX_VALUE);
 			/*
-			 * prima transazione, cancellazione crawl precedente
+			 * prima transazione, cancellazione segmenti precedenti
 			 * e avvio del processo
 			 */
 			utx.begin();
 			try {
-				Index currentIndex = getCurrentIndex();
-				if (currentIndex!=null) {
-					FileUtils.deleteDirectory(new File(currentIndex.getPath()));
+				File segmentsDir = new File(nutchHome+"/crawl/segments");
+				if (segmentsDir.exists()) {
+					File[] segments = segmentsDir.listFiles();
+					for (File segment : segments) {
+						FileUtils.deleteDirectory(segment);
+					}
 				}
 				request.setState(ExecutionState.STARTED);
 				request.setLastUpdate(new Date());
