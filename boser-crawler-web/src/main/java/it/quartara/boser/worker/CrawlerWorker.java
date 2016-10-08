@@ -171,7 +171,8 @@ public class CrawlerWorker implements MessageListener {
 			newIndex.setCreationDate(now);
 			newIndex.setPath(nutchHome+File.separator+crawlId);
 			newIndex.setDepth(request.getIndexConfig().getDepth());
-			newIndex.setTopN(request.getIndexConfig().getTopN());
+			//newIndex.setTopN(request.getIndexConfig().getTopN());
+			newIndex.setTopN(50000);
 			em.persist(newIndex);
 			request.setState(errCode==0?ExecutionState.COMPLETED:ExecutionState.ERROR);
 			request.setLastUpdate(now);

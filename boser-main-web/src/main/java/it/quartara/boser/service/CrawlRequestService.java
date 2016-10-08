@@ -55,7 +55,7 @@ public class CrawlRequestService {
 		log.info("insert new CrawlRequest for IndexConfig: {}", indexConfigId);
 		IndexConfig indexConfig = em.find(IndexConfig.class, indexConfigId);
 		indexConfig.setDepth(depth.shortValue());
-		indexConfig.setTopN(topN.shortValue());
+		indexConfig.setTopN(topN);
 		em.merge(indexConfig);
 		CrawlRequest crawlRequest = new CrawlRequest();
 		crawlRequest.setIndexConfig(indexConfig);
