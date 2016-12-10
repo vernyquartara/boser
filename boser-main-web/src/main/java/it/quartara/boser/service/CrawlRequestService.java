@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -64,6 +65,19 @@ public class CrawlRequestService {
 		crawlRequest.setLastUpdate(now);
 		crawlRequest.setState(ExecutionState.READY);
 		em.persist(crawlRequest);
+	}
+	
+	@GET
+	@Path("/isStarted")
+	public boolean isCrawlerStarted() {
+		try {
+			CrawlRequest started = 
+					em.createQuery("from CrawlRequest where state = 'STARTED' or state = 'READY'", CrawlRequest.class).getSingleResult();
+			log.debug("crawler {} is started", started.getId());
+			return true;
+		} catch (NoResultException e) {
+			return false;
+		}
 	}
 	
 }

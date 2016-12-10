@@ -5,9 +5,37 @@ angular.module('Boser')
 	 */
 	$scope.bntListActive = true;
 	$scope.submenu = function(selected) {
+		if (selected=='new') {
+			/* il pulsante AVVIA si mostra solo se non ci sono Crawl in corso */
+			$http({
+				method: 'GET', 
+				url: 'rest/crawlRequest/isStarted'
+			}).success(function(result) {
+				console.log('crawlRequest/isStarted = '+result);
+				$scope.crawlSubBtnDisabled = result;
+			});
+		}
+		if (selected=='list') {
+			/* la lista va ricaricata quando si torna sulla vista */
+			$http({
+				method: 'GET',
+				url: 'rest/crawlRequest'
+			}).success(function(result) {
+				$scope.requests = result;
+			});
+		}
 		$scope.bntNewActive = (selected == 'new' && !$scope.bntNewActive);
 		$scope.bntListActive = (selected == 'list' && !$scope.bntListActive);
 	}
+	/*
+	 * evitare submit multiplo
+	 */
+	//$scope.crawlSubBtnDisabled = true;
+	$scope.disableCrawlSubBtnButton = function() {
+		$scope.crawlSubBtnDisabled = true;
+		$scope.processForm();
+	}
+	
 	/*
 	 * inizializzazione lista
 	 */
@@ -73,7 +101,6 @@ angular.module('Boser')
     		console.log("ko");
     	});
 	}
-	
 	/*
 	 * gestione inserimento crawl request
 	 */

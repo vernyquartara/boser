@@ -56,7 +56,8 @@
 			</div>
 			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10">
-					<button type="submit" class="btn btn-primary">Avvia</button>
+					<div class="alert alert-warning" ng-show="crawlSubBtnDisabled">Crawl attualmente in corso, attendere il completamento per avviare</div>
+					<button id="crawlSubBtn" type="submit" class="btn btn-primary" ng-disabled="crawlSubBtnDisabled" ng-click="disableCrawlSubBtnButton()">Avvia</button>
 				</div>
 			</div>
 		</form>
